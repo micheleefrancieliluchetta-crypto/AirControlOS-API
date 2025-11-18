@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AirControl.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251116164105_AllowNull_TecnicoId")]
-    partial class AllowNull_TecnicoId
+    [Migration("20251118082821_InitialPostgres")]
+    partial class InitialPostgres
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -114,11 +114,11 @@ namespace AirControl.Api.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
 
-                    b.Property<double?>("Lat")
-                        .HasColumnType("float");
+                    b.Property<decimal?>("Lat")
+                        .HasColumnType("decimal(18,2)");
 
-                    b.Property<double?>("Lng")
-                        .HasColumnType("float");
+                    b.Property<decimal?>("Lng")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Observacoes")
                         .HasColumnType("nvarchar(max)");

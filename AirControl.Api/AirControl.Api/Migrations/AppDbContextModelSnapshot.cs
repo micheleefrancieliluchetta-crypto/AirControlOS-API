@@ -111,11 +111,11 @@ namespace AirControl.Api.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
 
-                    b.Property<double?>("Lat")
-                        .HasColumnType("float");
+                    b.Property<decimal?>("Lat")
+                        .HasColumnType("decimal(18,2)");
 
-                    b.Property<double?>("Lng")
-                        .HasColumnType("float");
+                    b.Property<decimal?>("Lng")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Observacoes")
                         .HasColumnType("nvarchar(max)");
