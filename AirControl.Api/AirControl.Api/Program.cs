@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// CORS
+// CORS (igual você já fez)
 const string CorsPolicy = "AirControlCors";
 var allowedOrigins = new[]
 {
@@ -32,17 +32,36 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// EF Core
-builder.Services.AddDbContext<AppDbContext>(opts =>
-    opts.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
-        sql =>
-        {
-            sql.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
-            sql.CommandTimeout(60);
-        })
-);
+
+// ************* CONFIGURAÇÃO DO BANCO *************
+if (builder.Environment.IsDevelopment())
+{
+    // Quando rodar no Visual Studio (ambiente Development) → SQL Server local
+    builder.Services.AddDbContext<AppDbContext>(opts =>
+        opts.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
+            sql =>
+            {
+                sql.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
+                sql.CommandTimeout(60);
+            })
+    );
+}
+else
+{
+    // Quando rodar no Render (Production) → PostgreSQL
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+}
+// ***********************************************
 
 var app = builder.Build();
+
+// aplica migrations automaticamente (opcional, mas ajuda)
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
 
 if (app.Environment.IsDevelopment())
 {
