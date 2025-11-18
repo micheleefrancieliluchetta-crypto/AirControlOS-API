@@ -1,0 +1,16 @@
+# Pasta de configuração do Visual Studio
+.vs/
+
+# Pastas de build (bin e obj)
+bin/
+obj/
+
+# Arquivos de usuário do Visual Studio
+*.user
+*.suo
+
+# Logs
+*.log
+
+# Outros
+/SQLQuery*.sql
