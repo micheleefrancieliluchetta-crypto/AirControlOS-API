@@ -4,10 +4,6 @@ obj/
 .vs/
 Properties/
 
-# Pasta de backend (se estiver aqui dentro)
-Backend 1/
-AirControl.Api/
-
 # Arquivos de solução / configs locais
 *.suo
 *.user
