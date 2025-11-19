@@ -4,8 +4,9 @@ using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// CORS (igual você já fez)
+// ======================== CORS ========================
 const string CorsPolicy = "AirControlCors";
+
 var allowedOrigins = new[]
 {
     "http://127.0.0.1:5500",
@@ -13,6 +14,7 @@ var allowedOrigins = new[]
     "https://seu-projeto.vercel.app",
     "https://os.seudominio.com"
 };
+
 builder.Services.AddCors(opt =>
     opt.AddPolicy(CorsPolicy, p =>
         p.WithOrigins(allowedOrigins)
@@ -22,7 +24,7 @@ builder.Services.AddCors(opt =>
     )
 );
 
-// Controllers + JSON
+// =================== Controllers + JSON ===================
 builder.Services.AddControllers()
     .AddJsonOptions(o =>
     {
@@ -32,37 +34,24 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-
-// ************* CONFIGURAÇÃO DO BANCO *************
-if (builder.Environment.IsDevelopment())
+// =================== BANCO DE DADOS (PostgreSQL em tudo) ===================
+builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    // Quando rodar no Visual Studio (ambiente Development) → SQL Server local
-    builder.Services.AddDbContext<AppDbContext>(opts =>
-        opts.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
-            sql =>
-            {
-                sql.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
-                sql.CommandTimeout(60);
-            })
-    );
-}
-else
-{
-    // Quando rodar no Render (Production) → PostgreSQL
-    builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-}
-// ***********************************************
+    var connString = builder.Configuration.GetConnectionString("DefaultConnection");
+    options.UseNpgsql(connString);
+});
 
+// =================== Build ===================
 var app = builder.Build();
 
-// aplica migrations automaticamente (opcional, mas ajuda)
+// =================== Aplicar migrations automaticamente ===================
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
 }
 
+// =================== Pipeline ===================
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
