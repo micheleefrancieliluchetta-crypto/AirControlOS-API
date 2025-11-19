@@ -11,8 +11,7 @@ var allowedOrigins = new[]
 {
     "http://127.0.0.1:5500",
     "http://localhost:5500",
-    "https://seu-projeto.vercel.app",
-    "https://os.seudominio.com"
+    "https://aircontrolos-web.vercel.app/",
 };
 
 builder.Services.AddCors(opt =>
