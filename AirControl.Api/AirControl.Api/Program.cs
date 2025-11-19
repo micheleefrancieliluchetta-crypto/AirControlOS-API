@@ -11,7 +11,7 @@ var allowedOrigins = new[]
 {
     "http://127.0.0.1:5500",
     "http://localhost:5500",
-    "https://aircontrolos-web.vercel.app"   // <-- SEU SITE NO VERCEL
+    "https://aircontrolos-web.vercel.app"   // frontend no Vercel
 };
 
 builder.Services.AddCors(options =>
@@ -22,8 +22,6 @@ builder.Services.AddCors(options =>
             .WithOrigins(allowedOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod();
-        // Se um dia usar cookie/autenticação por cookie, aí sim:
-        // .AllowCredentials();
     });
 });
 
@@ -47,7 +45,7 @@ if (builder.Environment.IsDevelopment())
 }
 else
 {
-    // PRODUÇÃO (Render) → PostgreSQL
+    // PRODUÇÃO → PostgreSQL (Render)
     builder.Services.AddDbContext<AppDbContext>(opts =>
         opts.UseNpgsql(
             builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -63,20 +61,18 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate();
 }
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// Swagger LIGADO SEMPRE (dev + produção)
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 
-// CORS ANTES DOS CONTROLLERS
+// CORS antes dos controllers
 app.UseCors(CorsPolicy);
 
 app.MapControllers();
 
-// opcional, mas ajuda o Render no health-check
+// endpoint de health-check pro Render
 app.MapGet("/healthz", () => Results.Ok("OK"));
 
 app.Run();
