@@ -1,76 +1,83 @@
-﻿using Microsoft.EntityFrameworkCore;
-using AirControl.Api.Data;
-using System.Text.Json.Serialization;
+﻿using AirControl.Api.Data;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ========== CORS ==========
-const string CorsPolicy = "AirControlCors";
+// ================================
+// CONFIGURAÇÃO DE SERVIÇOS
+// ================================
 
-var allowedOrigins = new[]
-{
-    "http://127.0.0.1:5500",
-    "http://localhost:5500",
-    "http://localhost:5173",
-    "https://aircontrolos-web.vercel.app" // frontend no Vercel
-};
-
-builder.Services.AddCors(opt =>
-    opt.AddPolicy(CorsPolicy, p =>
-        p.WithOrigins(allowedOrigins)
-         .AllowAnyHeader()
-         .AllowAnyMethod()
-         .AllowCredentials()
-    )
-);
-
-// ========== CONTROLLERS + JSON ==========
-builder.Services.AddControllers()
-    .AddJsonOptions(o =>
-    {
-        o.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-    });
-
+// Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// ========== BANCO DE DADOS ==========
-if (builder.Environment.IsDevelopment())
+// DbContext (PostgreSQL no Render)
+builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    // DEV → SQL Server local (igual já estava)
-    builder.Services.AddDbContext<AppDbContext>(opts =>
-        opts.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
-            sql =>
-            {
-                sql.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
-                sql.CommandTimeout(60);
-            })
-    );
-}
-else
+    // Usa a connection string DefaultConnection (Render pega de variável de ambiente ou appsettings)
+    var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
+    options.UseNpgsql(connStr);
+});
+
+// Controllers
+builder.Services.AddControllers();
+
+// CORS – libera o frontend da Vercel e o localhost
+builder.Services.AddCors(options =>
 {
-    // PRODUÇÃO (Render) → PostgreSQL
-    builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-}
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy
+            .WithOrigins(
+                "https://aircontrolos-web.vercel.app", // frontend em produção
+                "http://localhost:5500",               // teste local (Live Server)
+                "http://127.0.0.1:5500"
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+        // Se algum dia usar cookies/autenticação com credenciais:
+        // .AllowCredentials();
+    });
+});
 
 var app = builder.Build();
 
-// Aplica migrations automaticamente
-using (var scope = app.Services.CreateScope())
+// ================================
+// PIPELINE HTTP
+// ================================
+
+// NADA de app.UseHttpsRedirection(); no Render
+// app.UseHttpsRedirection();
+
+if (app.Environment.IsDevelopment())
 {
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+else
+{
+    // Swagger também em produção, na rota /swagger
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "AirControl.Api v1");
+        c.RoutePrefix = "swagger";
+    });
 }
 
-// ========== MIDDLEWARE ==========
-app.UseSwagger();      // <-- sempre habilitado (dev + produção)
-app.UseSwaggerUI();    // <-- sempre habilitado
+app.UseStaticFiles();
 
-app.UseHttpsRedirection();
+app.UseRouting();
 
-app.UseCors(CorsPolicy);
+// *** AQUI aplica a policy de CORS ***
+app.UseCors("AllowFrontend");
+
+app.UseAuthorization();
 
 app.MapControllers();
+
+// Endpoint simples de health check (usado pelo Render ou por você)
+app.MapGet("/healthz", () => Results.Ok("ok"))
+   .AllowAnonymous();
 
 app.Run();
