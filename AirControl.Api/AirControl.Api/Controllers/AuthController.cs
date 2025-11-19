@@ -2,9 +2,9 @@
 using AirControl.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.Extensions.Configuration; // <= adicionado
 
 namespace AirControl.Api.Controllers
 {
@@ -13,9 +13,9 @@ namespace AirControl.Api.Controllers
     public class AuthController : ControllerBase
     {
         private readonly AppDbContext _db;
-        private readonly IConfiguration _config; // <= adicionado
+        private readonly IConfiguration _config;
 
-        public AuthController(AppDbContext db, IConfiguration config) // <= adicionado IConfiguration
+        public AuthController(AppDbContext db, IConfiguration config)
         {
             _db = db;
             _config = config;
@@ -32,15 +32,13 @@ namespace AirControl.Api.Controllers
             // appsettings.json:
             // "Licensing": { "TrialEnd": "2025-12-31" }
             var trialEndStr = _config["Licensing:TrialEnd"];
-            if (DateTime.TryParse(trialEndStr, out var trialEnd))
+            if (DateTime.TryParse(trialEndStr, out var trialEnd) &&
+                DateTime.UtcNow.Date > trialEnd.Date)
             {
-                if (DateTime.UtcNow.Date > trialEnd.Date)
+                return StatusCode(403, new
                 {
-                    return StatusCode(403, new
-                    {
-                        message = "Período de testes encerrado. Entre em contato para liberar o acesso."
-                    });
-                }
+                    message = "Período de testes encerrado. Entre em contato para liberar o acesso."
+                });
             }
 
             var email = (model.Email ?? string.Empty).Trim().ToLowerInvariant();
@@ -49,8 +47,11 @@ namespace AirControl.Api.Controllers
             if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(senha))
                 return BadRequest("Informe e-mail e senha.");
 
+            // garante comparação de e-mail sem problema de maiúscula/minúscula
             var user = await _db.Usuarios
-                .FirstOrDefaultAsync(u => u.Email == email && u.Ativo);
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Ativo &&
+                                           u.Email.ToLower() == email);
 
             if (user == null)
                 return Unauthorized("Usuário não encontrado.");
@@ -58,12 +59,13 @@ namespace AirControl.Api.Controllers
             if (!VerificarSenha(senha, user.SenhaHash))
                 return Unauthorized("Senha incorreta.");
 
+            // ⬇️ IMPORTANTE: devolve o cargo
             return Ok(new
             {
                 id = user.Id,
                 nome = user.Nome,
                 email = user.Email,
-                cargo = user.Cargo
+                cargo = user.Cargo ?? string.Empty
             });
         }
 
@@ -91,7 +93,7 @@ namespace AirControl.Api.Controllers
             if (string.IsNullOrWhiteSpace(senha))
                 return BadRequest("Senha é obrigatória.");
 
-            // validação rápida de formato de e-mail (bem simples)
+            // validação simples de e-mail
             if (!email.Contains("@") || !email.Contains("."))
                 return BadRequest("E-mail em formato inválido.");
 
@@ -117,15 +119,12 @@ namespace AirControl.Api.Controllers
             }
             catch (DbUpdateException ex)
             {
-                // Se cair aqui por causa do índice único IX_Usuarios_Email,
-                // devolve 409 bonitinho em vez de 500.
                 var innerMsg = ex.InnerException?.Message ?? string.Empty;
                 if (innerMsg.Contains("IX_Usuarios_Email", StringComparison.OrdinalIgnoreCase))
                 {
                     return Conflict("E-mail já cadastrado.");
                 }
 
-                // Em produção você logaria o erro aqui.
                 return StatusCode(500, "Erro ao salvar usuário.");
             }
 
@@ -174,3 +173,4 @@ namespace AirControl.Api.Controllers
         public string Telefone { get; set; } = string.Empty;
     }
 }
+
