@@ -76,6 +76,10 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+// Rota inicial personalizada
+app.MapGet("/", () => Results.Ok("API AirControlOS funcionando 🚀"))
+   .AllowAnonymous();
+
 // Endpoint simples de health check (usado pelo Render ou por você)
 app.MapGet("/healthz", () => Results.Ok("ok"))
    .AllowAnonymous();
