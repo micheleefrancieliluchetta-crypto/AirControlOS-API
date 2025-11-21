@@ -14,7 +14,7 @@ builder.Services.AddSwaggerGen();
 // DbContext (PostgreSQL no Render)
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    // Usa a connection string DefaultConnection (Render pega de variável de ambiente ou appsettings)
+    // Usa a connection string DefaultConnection
     var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
     options.UseNpgsql(connStr);
 });
@@ -29,14 +29,12 @@ builder.Services.AddCors(options =>
     {
         policy
             .WithOrigins(
-                "https://aircontrolos-web.vercel.app", // frontend em produção
-                "http://localhost:5500",               // teste local (Live Server)
+                "https://aircontrolos-web.vercel.app", // produção
+                "http://localhost:5500",               // teste local
                 "http://127.0.0.1:5500"
             )
             .AllowAnyHeader()
             .AllowAnyMethod();
-        // Se algum dia usar cookies/autenticação com credenciais:
-        // .AllowCredentials();
     });
 });
 
@@ -46,7 +44,7 @@ var app = builder.Build();
 // PIPELINE HTTP
 // ================================
 
-// NADA de app.UseHttpsRedirection(); no Render
+// NÃO usar HTTPS redirection no Render
 // app.UseHttpsRedirection();
 
 if (app.Environment.IsDevelopment())
@@ -56,7 +54,7 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    // Swagger também em produção, na rota /swagger
+    // Swagger em produção também
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
@@ -69,14 +67,22 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// *** AQUI aplica a policy de CORS ***
+// aplica a policy de CORS
 app.UseCors("AllowFrontend");
 
 app.UseAuthorization();
 
 app.MapControllers();
 
-// Endpoint simples de health check (usado pelo Render ou por você)
+// ============================================
+// ROTAS SIMPLES: / (home) e /healthz
+// ============================================
+
+// Rota inicial personalizada
+app.MapGet("/", () => Results.Ok("API AirControlOS funcionando 🚀"))
+   .AllowAnonymous();
+
+// Health check
 app.MapGet("/healthz", () => Results.Ok("ok"))
    .AllowAnonymous();
 
