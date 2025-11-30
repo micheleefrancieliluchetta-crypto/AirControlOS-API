@@ -59,9 +59,13 @@ namespace AirControl.Api.Controllers
             if (!VerificarSenha(senha, user.SenhaHash))
                 return Unauthorized("Senha incorreta.");
 
-            // ⬇️ IMPORTANTE: devolve o cargo
+            // gera um token simples para usar no frontend / Swagger
+            var token = GerarTokenSimples(user);
+
+            // devolve dados + token
             return Ok(new
             {
+                token = token,
                 id = user.Id,
                 nome = user.Nome,
                 email = user.Email,
@@ -156,21 +160,31 @@ namespace AirControl.Api.Controllers
         {
             return GerarHash(senha) == hash;
         }
-    }
+
+        private string GerarTokenSimples(Usuario user)
+        {
+            // monta uma string com dados do usuário + data/hora
+            var raw = $"{user.Id}:{user.Email}:{DateTime.UtcNow:yyyyMMddHHmmss}";
+
+            // transforma em bytes e converte em Base64 (fica parecendo um token)
+            var bytes = Encoding.UTF8.GetBytes(raw);
+            return Convert.ToBase64String(bytes);
+        }
+    }  // <--- fecha a classe AuthController
 
     public class LoginRequest
-    {
-        public string Email { get; set; } = string.Empty;
-        public string Senha { get; set; } = string.Empty;
-    }
+        {
+            public string Email { get; set; } = string.Empty;
+            public string Senha { get; set; } = string.Empty;
+        }
 
-    public class RegistrarRequest
-    {
-        public string Nome { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string Senha { get; set; } = string.Empty;
-        public string Cargo { get; set; } = string.Empty;
-        public string Telefone { get; set; } = string.Empty;
+        public class RegistrarRequest
+        {
+            public string Nome { get; set; } = string.Empty;
+            public string Email { get; set; } = string.Empty;
+            public string Senha { get; set; } = string.Empty;
+            public string Cargo { get; set; } = string.Empty;
+            public string Telefone { get; set; } = string.Empty;
+        }
     }
-}
 
