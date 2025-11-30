@@ -94,7 +94,7 @@ public class OrdensServicoController : ControllerBase
     //  CRIAR OS (privado, tela interna) -> POST /api/OrdensServico
     // =========================================================
     [HttpPost]
-    [Authorize]   // se der problema de autenticação, pode remover esse atributo
+    // [Authorize] // removido por enquanto
     public async Task<IActionResult> Post([FromBody] OrdemServico os)
     {
         if (os == null)

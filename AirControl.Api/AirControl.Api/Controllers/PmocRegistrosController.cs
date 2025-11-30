@@ -8,7 +8,7 @@ namespace AirControl.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize] // só usuário logado
+    // [Authorize]   // removido por enquanto\\
     public class PmocRegistrosController : ControllerBase
     {
         private readonly AppDbContext _context;
