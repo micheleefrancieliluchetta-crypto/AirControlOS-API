@@ -13,6 +13,7 @@ public class AppDbContext : DbContext
     public DbSet<OrdemServico> OrdensServico => Set<OrdemServico>();
     public DbSet<Foto> Fotos => Set<Foto>();
     public DbSet<Usuario> Usuarios => Set<Usuario>();
+    public DbSet<PmocRegistro> PmocRegistros => Set<PmocRegistro>();
 
     // 👉 AQUI é o que faltava
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
