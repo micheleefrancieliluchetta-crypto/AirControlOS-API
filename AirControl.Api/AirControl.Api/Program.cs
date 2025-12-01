@@ -42,7 +42,6 @@ builder.Services.AddSwaggerGen(c =>
     }});
 });
 
-
 // DbContext (PostgreSQL no Render)
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
@@ -54,17 +53,17 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Controllers
 builder.Services.AddControllers();
 
-// CORS – libera o frontend da Vercel e o localhost
+// ================================
+// CORS – LIBERA FRONTEND (Vercel, localhost, etc.)
+// Para o seu TCC vamos liberar geral.
+// Depois, se quiser, dá pra restringir por origem.
+// ================================
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend", policy =>
+    options.AddDefaultPolicy(policy =>
     {
         policy
-            .WithOrigins(
-                "https://aircontrolos-web.vercel.app", // produção
-                "http://localhost:5500",               // teste local
-                "http://127.0.0.1:5500"
-            )
+            .AllowAnyOrigin()
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -99,8 +98,8 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// aplica a policy de CORS
-app.UseCors("AllowFrontend");
+// aplica CORS (agora usando a policy padrão)
+app.UseCors();
 
 app.UseAuthorization();
 
