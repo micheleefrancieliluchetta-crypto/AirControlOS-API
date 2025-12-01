@@ -10,21 +10,23 @@ namespace AirControl.Api.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[EnableCors("AllowAll")] // garante uso da policy AllowAll neste controller
+[EnableCors("AllowAll")] // usa a policy "AllowAll" definida no Program.cs
 public class OrdensServicoController : ControllerBase
 {
     private readonly AppDbContext _db;
     public OrdensServicoController(AppDbContext db) => _db = db;
 
     // ---------------------------------------------------------
-    // Pequeno helper para garantir headers de CORS na resposta
+    // Helper para garantir headers de CORS na resposta
     // (extra de segurança além do middleware)
     // ---------------------------------------------------------
     private void AddCorsHeaders()
     {
         HttpContext.Response.Headers["Access-Control-Allow-Origin"] = "*";
-        HttpContext.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization";
-        HttpContext.Response.Headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";
+        HttpContext.Response.Headers["Access-Control-Allow-Headers"] =
+            "Content-Type, Authorization";
+        HttpContext.Response.Headers["Access-Control-Allow-Methods"] =
+            "GET, POST, PUT, DELETE, OPTIONS";
     }
 
     // =========================================================

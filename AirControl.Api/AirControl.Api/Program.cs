@@ -1,15 +1,12 @@
 ﻿using AirControl.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
-using Microsoft.AspNetCore.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // ================================
 // CONFIGURAÇÃO DE SERVIÇOS
 // ================================
-
-// Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -54,35 +51,21 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Controllers
 builder.Services.AddControllers();
 
-var app = builder.Build();
-
 // ================================
-// MIDDLEWARE DE CORS MANUAL
+// CORS – policy única liberando geral
 // ================================
-app.Use(async (context, next) =>
+builder.Services.AddCors(options =>
 {
-    // Origem que está chamando (Vercel)
-    var origin = context.Request.Headers["Origin"].ToString();
-
-    // Se quiser liberar só o Vercel, troca "*" por "https://aircontrolos-web.vercel.app"
-    context.Response.Headers["Access-Control-Allow-Origin"] =
-        string.IsNullOrEmpty(origin) ? "*" : origin;
-
-    context.Response.Headers["Vary"] = "Origin";
-    context.Response.Headers["Access-Control-Allow-Credentials"] = "true";
-    context.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization";
-    context.Response.Headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";
-
-    // Se for preflight (OPTIONS), já responde aqui
-    if (context.Request.Method == HttpMethods.Options)
+    options.AddPolicy("AllowAll", policy =>
     {
-        context.Response.StatusCode = StatusCodes.Status200OK;
-        await context.Response.CompleteAsync();
-        return;
-    }
-
-    await next();
+        policy
+            .AllowAnyOrigin()
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
 });
+
+var app = builder.Build();
 
 // ================================
 // PIPELINE HTTP
@@ -97,6 +80,9 @@ app.UseSwaggerUI(c =>
 app.UseStaticFiles();
 
 app.UseRouting();
+
+// AQUI aplica o CORS com a policy "AllowAll"
+app.UseCors("AllowAll");
 
 app.UseAuthorization();
 
