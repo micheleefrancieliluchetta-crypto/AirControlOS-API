@@ -4,11 +4,13 @@ using Microsoft.EntityFrameworkCore;
 using AirControl.Api.Data;
 using AirControl.Api.Models;
 using AirControl.Api.Models.Dtos;
+using Microsoft.AspNetCore.Cors;
 
 namespace AirControl.Api.Controllers;
 
-[Route("api/[controller]")]
 [ApiController]
+[Route("api/[controller]")]
+[EnableCors("AllowFrontend")] // 👈 LIBERA CORS PARA O FRONT NA VERCEL
 public class OrdensServicoController : ControllerBase
 {
     private readonly AppDbContext _db;
@@ -94,7 +96,7 @@ public class OrdensServicoController : ControllerBase
     //  CRIAR OS (privado, tela interna) -> POST /api/OrdensServico
     // =========================================================
     [HttpPost]
-    // [Authorize] // removido por enquanto
+    // [Authorize] // se quiser travar depois
     public async Task<IActionResult> Post([FromBody] OrdemServico os)
     {
         if (os == null)
@@ -197,5 +199,4 @@ public class StatusDto
 {
     public string? Status { get; set; }
 }
-
 
