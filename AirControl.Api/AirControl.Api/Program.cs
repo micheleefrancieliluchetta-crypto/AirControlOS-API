@@ -1,5 +1,6 @@
 ﻿using AirControl.Api.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,34 +13,36 @@ builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    c.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "AirControl.Api",
         Version = "v1"
     });
 
     // CONFIGURAÇÃO DO TOKEN NO SWAGGER 🔒
-    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "Insira o token JWT assim: Bearer {seu_token}",
         Name = "Authorization",
-        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
     });
 
-    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement {
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
-        new Microsoft.OpenApi.Models.OpenApiSecurityScheme
         {
-            Reference = new Microsoft.OpenApi.Models.OpenApiReference
+            new OpenApiSecurityScheme
             {
-                Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                Id = "Bearer"
-            }
-        },
-        new string[] {}
-    }});
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
 });
 
 // DbContext (PostgreSQL no Render)
@@ -55,15 +58,17 @@ builder.Services.AddControllers();
 
 // ================================
 // CORS – LIBERA FRONTEND (Vercel, localhost, etc.)
-// Para o seu TCC vamos liberar geral.
-// Depois, se quiser, dá pra restringir por origem.
 // ================================
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(policy =>
+    options.AddPolicy("AllowFrontend", policy =>
     {
         policy
-            .AllowAnyOrigin()
+            .WithOrigins(
+                "https://aircontrolos-web.vercel.app", // produção
+                "http://localhost:5500",               // teste local
+                "http://127.0.0.1:5500"
+            )
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -78,28 +83,20 @@ var app = builder.Build();
 // NÃO usar HTTPS redirection no Render
 // app.UseHttpsRedirection();
 
-if (app.Environment.IsDevelopment())
+// Swagger em DEV e em PRODUÇÃO
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-else
-{
-    // Swagger em produção também
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "AirControl.Api v1");
-        c.RoutePrefix = "swagger";
-    });
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "AirControl.Api v1");
+    c.RoutePrefix = "swagger";
+});
 
 app.UseStaticFiles();
 
 app.UseRouting();
 
-// aplica CORS (agora usando a policy padrão)
-app.UseCors();
+// aplica CORS usando a policy "AllowFrontend"
+app.UseCors("AllowFrontend");
 
 app.UseAuthorization();
 
