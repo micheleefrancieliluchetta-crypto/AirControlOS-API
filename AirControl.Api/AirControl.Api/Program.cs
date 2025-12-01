@@ -7,6 +7,8 @@ var builder = WebApplication.CreateBuilder(args);
 // ================================
 // CONFIGURAÇÃO DE SERVIÇOS
 // ================================
+
+// Swagger / OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -48,7 +50,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connStr);
 });
 
-// Controllers
+// Controllers (API tradicional)
 builder.Services.AddControllers();
 
 // ================================
@@ -59,7 +61,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAll", policy =>
     {
         policy
-            .AllowAnyOrigin()
+            .AllowAnyOrigin()  // libera qualquer origem (Vercel, localhost, etc.)
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -70,6 +72,8 @@ var app = builder.Build();
 // ================================
 // PIPELINE HTTP
 // ================================
+
+// Swagger sempre disponível (se quiser, pode limitar para Development)
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -77,18 +81,23 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = "swagger";
 });
 
+// Arquivos estáticos (se tiver)
 app.UseStaticFiles();
 
+// Roteamento
 app.UseRouting();
 
-// AQUI aplica o CORS com a policy "AllowAll"
+// CORS TEM QUE VIR AQUI:
+// entre UseRouting e UseAuthorization
 app.UseCors("AllowAll");
 
+// Autorização (JWT etc., quando você usar)
 app.UseAuthorization();
 
+// Controllers
 app.MapControllers();
 
-// Rotas simples
+// Rotas simples (health check, root etc.)
 app.MapGet("/", () => Results.Ok("API AirControlOS funcionando 🚀"))
    .AllowAnonymous();
 
@@ -96,3 +105,4 @@ app.MapGet("/healthz", () => Results.Ok("ok"))
    .AllowAnonymous();
 
 app.Run();
+

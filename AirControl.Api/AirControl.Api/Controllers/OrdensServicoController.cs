@@ -16,19 +16,6 @@ public class OrdensServicoController : ControllerBase
     private readonly AppDbContext _db;
     public OrdensServicoController(AppDbContext db) => _db = db;
 
-    // ---------------------------------------------------------
-    // Helper para garantir headers de CORS na resposta
-    // (extra de segurança além do middleware)
-    // ---------------------------------------------------------
-    private void AddCorsHeaders()
-    {
-        HttpContext.Response.Headers["Access-Control-Allow-Origin"] = "*";
-        HttpContext.Response.Headers["Access-Control-Allow-Headers"] =
-            "Content-Type, Authorization";
-        HttpContext.Response.Headers["Access-Control-Allow-Methods"] =
-            "GET, POST, PUT, DELETE, OPTIONS";
-    }
-
     // =========================================================
     //  RESUMO / CONTAGEM  ->  GET /api/OrdensServico/contagem
     // =========================================================
@@ -39,8 +26,6 @@ public class OrdensServicoController : ControllerBase
         var abertas = await _db.OrdensServico.CountAsync(o => o.Status == "Aberta");
         var emAndamento = await _db.OrdensServico.CountAsync(o => o.Status == "Em Andamento");
         var concluidas = await _db.OrdensServico.CountAsync(o => o.Status == "Concluída");
-
-        AddCorsHeaders();
 
         return Ok(new
         {
@@ -89,8 +74,6 @@ public class OrdensServicoController : ControllerBase
             .Take(pageSize)
             .ToListAsync();
 
-        AddCorsHeaders();
-
         return new { total, itens };
     }
 
@@ -105,8 +88,6 @@ public class OrdensServicoController : ControllerBase
             .Include(o => o.Tecnico)
             .Include(o => o.Fotos)
             .FirstOrDefaultAsync(o => o.Id == id);
-
-        AddCorsHeaders();
 
         return os is null ? NotFound() : os;
     }
@@ -130,19 +111,17 @@ public class OrdensServicoController : ControllerBase
         _db.OrdensServico.Add(os);
         await _db.SaveChangesAsync();
 
-        AddCorsHeaders();
-
         return CreatedAtAction(nameof(GetById), new { id = os.Id }, os);
     }
 
     // =========================================================
     //  PRE-FLIGHT (OPTIONS) PÚBLICO -> OPTIONS /api/OrdensServico/publico
+    // (nem seria obrigatório, CORS global já atende, mas deixei)
     // =========================================================
     [HttpOptions("publico")]
     [AllowAnonymous]
     public IActionResult OptionsPublic()
     {
-        AddCorsHeaders();
         return Ok();
     }
 
@@ -179,8 +158,6 @@ public class OrdensServicoController : ControllerBase
         _db.OrdensServico.Add(os);
         await _db.SaveChangesAsync();
 
-        AddCorsHeaders();
-
         return CreatedAtAction(nameof(GetById), new { id = os.Id }, os);
     }
 
@@ -206,8 +183,6 @@ public class OrdensServicoController : ControllerBase
             await _db.SaveChangesAsync();
         }
 
-        AddCorsHeaders();
-
         return NoContent();
     }
 
@@ -227,8 +202,6 @@ public class OrdensServicoController : ControllerBase
         _db.OrdensServico.Remove(os);
         await _db.SaveChangesAsync();
 
-        AddCorsHeaders();
-
         return NoContent();
     }
 }
@@ -238,3 +211,4 @@ public class StatusDto
 {
     public string? Status { get; set; }
 }
+
