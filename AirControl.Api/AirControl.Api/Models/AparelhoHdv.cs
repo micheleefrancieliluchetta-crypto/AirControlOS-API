@@ -109,7 +109,7 @@ namespace AirControl.Api.Models
             new AparelhoHdv { UnidadeExterna = null, Local = "FISIOTERAPIA",               Marca = "MIDEA",  Btu = 12000,  Modelo = "HW" },
             new AparelhoHdv { UnidadeExterna = null, Local = "C. MASCULINO",               Marca = "MIDEA",  Btu = 9000,   Modelo = "HW" },
             new AparelhoHdv { UnidadeExterna = null, Local = "ALMOXARIFADO",               Marca = "ELGIN",  Btu = 60000,  Modelo = "PT" },
-            new AparelhoHdv { UnidadeExterna = null, Local = "ESTABILIZAÇÃO",              Marca = null,     Btu = null,   Modelo = null },
+            new AparelhoHdv { UnidadeExterna = null, Local = "ESTABILIZAÇÃO",              Marca = "CARRIER",Btu = 90000,  Modelo = "CASSETE" },
         };
     }
 }
