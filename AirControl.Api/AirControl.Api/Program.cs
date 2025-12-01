@@ -8,7 +8,6 @@ var builder = WebApplication.CreateBuilder(args);
 // CONFIGURAÇÃO DE SERVIÇOS
 // ================================
 
-// Swagger
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(c =>
@@ -19,7 +18,7 @@ builder.Services.AddSwaggerGen(c =>
         Version = "v1"
     });
 
-    // CONFIGURAÇÃO DO TOKEN NO SWAGGER 🔒
+    // JWT no Swagger
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "Insira o token JWT assim: Bearer {seu_token}",
@@ -75,9 +74,6 @@ var app = builder.Build();
 // PIPELINE HTTP
 // ================================
 
-// NÃO usar HTTPS redirection no Render
-// app.UseHttpsRedirection();
-
 // Swagger em DEV e PRODUÇÃO
 app.UseSwagger();
 app.UseSwaggerUI(c =>
@@ -88,24 +84,14 @@ app.UseSwaggerUI(c =>
 
 app.UseStaticFiles();
 
-// ORDEM IMPORTANTE:
-// 1) Routing
-// 2) CORS
-// 3) Authorization
-// 4) MapControllers
-
+// ORDEM IMPORTANTE
 app.UseRouting();
-
 app.UseCors("AllowAll");
-
 app.UseAuthorization();
 
 app.MapControllers();
 
-// ============================================
-// ROTAS SIMPLES: / (home) e /healthz
-// ============================================
-
+// Rotas simples
 app.MapGet("/", () => Results.Ok("API AirControlOS funcionando 🚀"))
    .AllowAnonymous();
 
