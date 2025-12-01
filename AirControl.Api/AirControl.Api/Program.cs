@@ -1,6 +1,7 @@
 ﻿using AirControl.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,8 +9,8 @@ var builder = WebApplication.CreateBuilder(args);
 // CONFIGURAÇÃO DE SERVIÇOS
 // ================================
 
+// Swagger
 builder.Services.AddEndpointsApiExplorer();
-
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
@@ -18,7 +19,6 @@ builder.Services.AddSwaggerGen(c =>
         Version = "v1"
     });
 
-    // JWT no Swagger
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "Insira o token JWT assim: Bearer {seu_token}",
@@ -54,27 +54,39 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Controllers
 builder.Services.AddControllers();
 
-// ================================
-// CORS – LIBERA GERAL (TCC / estágio)
-// ================================
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAll", policy =>
-    {
-        policy
-            .AllowAnyOrigin()
-            .AllowAnyHeader()
-            .AllowAnyMethod();
-    });
-});
-
 var app = builder.Build();
+
+// ================================
+// MIDDLEWARE DE CORS MANUAL
+// ================================
+app.Use(async (context, next) =>
+{
+    // Origem que está chamando (Vercel)
+    var origin = context.Request.Headers["Origin"].ToString();
+
+    // Se quiser liberar só o Vercel, troca "*" por "https://aircontrolos-web.vercel.app"
+    context.Response.Headers["Access-Control-Allow-Origin"] =
+        string.IsNullOrEmpty(origin) ? "*" : origin;
+
+    context.Response.Headers["Vary"] = "Origin";
+    context.Response.Headers["Access-Control-Allow-Credentials"] = "true";
+    context.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization";
+    context.Response.Headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";
+
+    // Se for preflight (OPTIONS), já responde aqui
+    if (context.Request.Method == HttpMethods.Options)
+    {
+        context.Response.StatusCode = StatusCodes.Status200OK;
+        await context.Response.CompleteAsync();
+        return;
+    }
+
+    await next();
+});
 
 // ================================
 // PIPELINE HTTP
 // ================================
-
-// Swagger em DEV e PRODUÇÃO
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -84,9 +96,8 @@ app.UseSwaggerUI(c =>
 
 app.UseStaticFiles();
 
-// ORDEM IMPORTANTE
 app.UseRouting();
-app.UseCors("AllowAll");
+
 app.UseAuthorization();
 
 app.MapControllers();
