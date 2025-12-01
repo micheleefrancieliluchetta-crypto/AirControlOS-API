@@ -10,7 +10,7 @@ namespace AirControl.Api.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[EnableCors("AllowAll")] // usa a policy "AllowAll" definida no Program.cs
+[EnableCors("AllowAll")] 
 public class OrdensServicoController : ControllerBase
 {
     private readonly AppDbContext _db;
