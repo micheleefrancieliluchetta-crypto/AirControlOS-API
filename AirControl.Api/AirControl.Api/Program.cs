@@ -56,10 +56,18 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddControllers();
 
 // ================================
-// CORS – LIBERA GERAL (para TCC / estágio)
-// Depois, se quiser, dá pra restringir.
+// CORS – LIBERA GERAL (TCC / estágio)
 // ================================
-builder.Services.AddCors();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy
+            .AllowAnyOrigin()
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
 
 var app = builder.Build();
 
@@ -80,15 +88,15 @@ app.UseSwaggerUI(c =>
 
 app.UseStaticFiles();
 
-// **CORS BEM LIBERADO**
-app.UseCors(policy =>
-    policy
-        .AllowAnyOrigin()
-        .AllowAnyHeader()
-        .AllowAnyMethod()
-);
+// ORDEM IMPORTANTE:
+// 1) Routing
+// 2) CORS
+// 3) Authorization
+// 4) MapControllers
 
 app.UseRouting();
+
+app.UseCors("AllowAll");
 
 app.UseAuthorization();
 
