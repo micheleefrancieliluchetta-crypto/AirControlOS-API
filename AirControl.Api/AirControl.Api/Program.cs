@@ -48,7 +48,6 @@ builder.Services.AddSwaggerGen(c =>
 // DbContext (PostgreSQL no Render)
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    // Usa a connection string DefaultConnection
     var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
     options.UseNpgsql(connStr);
 });
@@ -57,22 +56,10 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddControllers();
 
 // ================================
-// CORS – LIBERA FRONTEND (Vercel, localhost, etc.)
+// CORS – LIBERA GERAL (para TCC / estágio)
+// Depois, se quiser, dá pra restringir.
 // ================================
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowFrontend", policy =>
-    {
-        policy
-            .WithOrigins(
-                "https://aircontrolos-web.vercel.app", // produção
-                "http://localhost:5500",               // teste local
-                "http://127.0.0.1:5500"
-            )
-            .AllowAnyHeader()
-            .AllowAnyMethod();
-    });
-});
+builder.Services.AddCors();
 
 var app = builder.Build();
 
@@ -83,7 +70,7 @@ var app = builder.Build();
 // NÃO usar HTTPS redirection no Render
 // app.UseHttpsRedirection();
 
-// Swagger em DEV e em PRODUÇÃO
+// Swagger em DEV e PRODUÇÃO
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -93,10 +80,15 @@ app.UseSwaggerUI(c =>
 
 app.UseStaticFiles();
 
-app.UseRouting();
+// **CORS BEM LIBERADO**
+app.UseCors(policy =>
+    policy
+        .AllowAnyOrigin()
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+);
 
-// aplica CORS usando a policy "AllowFrontend"
-app.UseCors("AllowFrontend");
+app.UseRouting();
 
 app.UseAuthorization();
 
@@ -106,11 +98,9 @@ app.MapControllers();
 // ROTAS SIMPLES: / (home) e /healthz
 // ============================================
 
-// Rota inicial personalizada
 app.MapGet("/", () => Results.Ok("API AirControlOS funcionando 🚀"))
    .AllowAnonymous();
 
-// Health check
 app.MapGet("/healthz", () => Results.Ok("ok"))
    .AllowAnonymous();
 
