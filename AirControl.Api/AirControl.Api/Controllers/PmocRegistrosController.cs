@@ -3,12 +3,15 @@ using AirControl.Api.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace AirControl.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    // [Authorize]   // removido por enquanto\\
+    // [Authorize]   // removido por enquanto
     public class PmocRegistrosController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -22,15 +25,26 @@ namespace AirControl.Api.Controllers
         [HttpPost]
         public async Task<IActionResult> Criar([FromBody] CriarPmocRegistroDto dto)
         {
-            // pega o email do usuário logado (do token JWT)
-            var email = User.Identity?.Name ?? dto.TecnicoEmail;
+            if (dto == null)
+                return BadRequest("Dados do PMOC não enviados.");
+
+            // 1) tenta pegar do token (quando você voltar a usar [Authorize])
+            var email = User.Identity?.Name;
+
+            // 2) se não tiver no token, usa o que veio no DTO
+            if (string.IsNullOrWhiteSpace(email))
+                email = dto.TecnicoEmail;
+
+            // 3) se ainda estiver vazio, usa um valor padrão
+            if (string.IsNullOrWhiteSpace(email))
+                email = "pmoc@aircontrolos"; // <-- NÃO FICA NULO NO BANCO
 
             var registro = new PmocRegistro
             {
                 AparelhoHdvId = dto.AparelhoHdvId,
-                TecnicoEmail = email!,
-                Data = DateTime.UtcNow,
-                ItensJson = dto.ItensJson
+                TecnicoEmail = email,                      // nunca nulo
+                Data = DateTime.UtcNow,                    // data de criação
+                ItensJson = dto.ItensJson ?? string.Empty  // garante string
             };
 
             _context.PmocRegistros.Add(registro);
@@ -48,7 +62,7 @@ namespace AirControl.Api.Controllers
             return registro;
         }
 
-        // GET api/PmocRegistros/por-aparelho/5
+        // GET api/PmocRegistros/por-aparelho/{aparelhoId}
         [HttpGet("por-aparelho/{aparelhoId}")]
         public async Task<ActionResult<IEnumerable<PmocRegistro>>> ListarPorAparelho(int aparelhoId)
         {
