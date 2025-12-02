@@ -4,10 +4,6 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ================================
-// CONFIGURAÇÃO DE SERVIÇOS
-// ================================
-
 // Swagger / OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -53,9 +49,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Controllers
 builder.Services.AddControllers();
 
-// ================================
-// CORS – policy padrão liberando geral
-// ================================
+// CORS – política padrão liberando geral
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -69,10 +63,6 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// ================================
-// PIPELINE HTTP
-// ================================
-
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -84,7 +74,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// aplica CORS para TUDO
+// aplica CORS para tudo
 app.UseCors();
 
 app.UseAuthorization();
@@ -93,10 +83,8 @@ app.UseAuthorization();
 app.MapMethods("{*path}", new[] { "OPTIONS" }, () => Results.Ok())
    .AllowAnonymous();
 
-// Controllers
 app.MapControllers();
 
-// Rotas simples
 app.MapGet("/", () => Results.Ok("API AirControlOS funcionando 🚀"))
    .AllowAnonymous();
 

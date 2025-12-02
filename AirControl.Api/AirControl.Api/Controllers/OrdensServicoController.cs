@@ -14,6 +14,19 @@ public class OrdensServicoController : ControllerBase
     private readonly AppDbContext _db;
     public OrdensServicoController(AppDbContext db) => _db = db;
 
+    // ---------------------------------------------------------
+    // Helper de CORS explícito (garantia extra)
+    // ---------------------------------------------------------
+    private void AddCorsHeaders()
+    {
+        HttpContext.Response.Headers["Access-Control-Allow-Origin"] = "https://aircontrolos-web.vercel.app";
+        HttpContext.Response.Headers["Vary"] = "Origin";
+        HttpContext.Response.Headers["Access-Control-Allow-Headers"] =
+            "Content-Type, Authorization";
+        HttpContext.Response.Headers["Access-Control-Allow-Methods"] =
+            "GET, POST, PUT, DELETE, OPTIONS";
+    }
+
     // =========================================================
     //  RESUMO / CONTAGEM  ->  GET /api/OrdensServico/contagem
     // =========================================================
@@ -94,7 +107,6 @@ public class OrdensServicoController : ControllerBase
     //  CRIAR OS (privado, tela interna) -> POST /api/OrdensServico
     // =========================================================
     [HttpPost]
-    // [Authorize] // se quiser travar depois
     public async Task<IActionResult> Post([FromBody] OrdemServico os)
     {
         if (os == null)
@@ -114,12 +126,12 @@ public class OrdensServicoController : ControllerBase
 
     // =========================================================
     //  PRE-FLIGHT (OPTIONS) PÚBLICO -> OPTIONS /api/OrdensServico/publico
-    // (nem seria obrigatório, CORS global já atende, mas deixei)
     // =========================================================
     [HttpOptions("publico")]
     [AllowAnonymous]
     public IActionResult OptionsPublic()
     {
+        AddCorsHeaders();
         return Ok();
     }
 
@@ -142,7 +154,7 @@ public class OrdensServicoController : ControllerBase
         var os = new OrdemServico
         {
             ClienteId = clienteId,
-            TecnicoId = null, // público não define
+            TecnicoId = null,
             Descricao = dto.Descricao,
             Prioridade = dto.Prioridade ?? "Baixa",
             Status = dto.Status ?? "Aberta",
@@ -156,11 +168,13 @@ public class OrdensServicoController : ControllerBase
         _db.OrdensServico.Add(os);
         await _db.SaveChangesAsync();
 
+        AddCorsHeaders(); // garante o header também na resposta do POST
+
         return CreatedAtAction(nameof(GetById), new { id = os.Id }, os);
     }
 
     // =========================================================
-    //  ALTERAR STATUS (dashboard) -> PUT /api/OrdensServico/{id}/status
+    //  ALTERAR STATUS -> PUT /api/OrdensServico/{id}/status
     // =========================================================
     [HttpPut("{id:int}/status")]
     public async Task<IActionResult> PutStatus(int id, [FromBody] StatusDto body)
@@ -172,8 +186,6 @@ public class OrdensServicoController : ControllerBase
         if (!string.IsNullOrWhiteSpace(novo))
         {
             os.Status = novo;
-
-            // se marcar como concluída, grava DataConclusao
             os.DataConclusao = novo.Contains("Conclu", StringComparison.OrdinalIgnoreCase)
                 ? DateTime.Now
                 : null;
@@ -209,4 +221,3 @@ public class StatusDto
 {
     public string? Status { get; set; }
 }
-
