@@ -58,9 +58,10 @@ builder.Services.AddControllers();
 // ================================
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("PermitirVercel", policy =>
+    options.AddPolicy("AllowAll", policy =>
     {
-        policy.WithOrigins("https://aircontrolos-web.vercel.app") // Sua URL do front
+        policy
+            .AllowAnyOrigin()
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -72,7 +73,6 @@ var app = builder.Build();
 // PIPELINE HTTP
 // ================================
 
-// Swagger sempre disponível (se quiser, pode limitar para Development)
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -80,23 +80,26 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = "swagger";
 });
 
-// Arquivos estáticos (se tiver)
 app.UseStaticFiles();
 
-// Roteamento
 app.UseRouting();
 
-// CORS TEM QUE VIR AQUI:
-// entre UseRouting e UseAuthorization
+// CORS precisa vir aqui
 app.UseCors("AllowAll");
 
-// Autorização (JWT etc., quando você usar)
 app.UseAuthorization();
+
+// ----------------------------------------------------
+// Handler genérico para qualquer OPTIONS (pré-flight)
+// -> cobre /api/auth/login, /api/OrdensServico/publico etc.
+// ----------------------------------------------------
+app.MapMethods("{*path}", new[] { "OPTIONS" }, () => Results.Ok())
+   .AllowAnonymous();
 
 // Controllers
 app.MapControllers();
 
-// Rotas simples (health check, root etc.)
+// Rotas simples
 app.MapGet("/", () => Results.Ok("API AirControlOS funcionando 🚀"))
    .AllowAnonymous();
 
@@ -104,4 +107,5 @@ app.MapGet("/healthz", () => Results.Ok("ok"))
    .AllowAnonymous();
 
 app.Run();
+
 
