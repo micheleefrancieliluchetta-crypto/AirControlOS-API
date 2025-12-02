@@ -50,15 +50,15 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connStr);
 });
 
-// Controllers (API tradicional)
+// Controllers
 builder.Services.AddControllers();
 
 // ================================
-// CORS – policy única liberando geral
+// CORS – policy padrão liberando geral
 // ================================
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddDefaultPolicy(policy =>
     {
         policy
             .AllowAnyOrigin()
@@ -84,15 +84,12 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// CORS precisa vir aqui
-app.UseCors("AllowAll");
+// aplica CORS para TUDO
+app.UseCors();
 
 app.UseAuthorization();
 
-// ----------------------------------------------------
 // Handler genérico para qualquer OPTIONS (pré-flight)
-// -> cobre /api/auth/login, /api/OrdensServico/publico etc.
-// ----------------------------------------------------
 app.MapMethods("{*path}", new[] { "OPTIONS" }, () => Results.Ok())
    .AllowAnonymous();
 
@@ -107,5 +104,3 @@ app.MapGet("/healthz", () => Results.Ok("ok"))
    .AllowAnonymous();
 
 app.Run();
-
-

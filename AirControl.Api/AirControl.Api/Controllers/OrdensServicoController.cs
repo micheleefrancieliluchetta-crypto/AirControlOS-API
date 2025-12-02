@@ -4,13 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using AirControl.Api.Data;
 using AirControl.Api.Models;
 using AirControl.Api.Models.Dtos;
-using Microsoft.AspNetCore.Cors;
 
 namespace AirControl.Api.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[EnableCors("AllowAll")] 
 public class OrdensServicoController : ControllerBase
 {
     private readonly AppDbContext _db;
