@@ -14,19 +14,6 @@ public class OrdensServicoController : ControllerBase
     private readonly AppDbContext _db;
     public OrdensServicoController(AppDbContext db) => _db = db;
 
-    // ---------------------------------------------------------
-    // Helper de CORS explícito (garantia extra)
-    // ---------------------------------------------------------
-    private void AddCorsHeaders()
-    {
-        HttpContext.Response.Headers["Access-Control-Allow-Origin"] = "https://aircontrolos-web.vercel.app";
-        HttpContext.Response.Headers["Vary"] = "Origin";
-        HttpContext.Response.Headers["Access-Control-Allow-Headers"] =
-            "Content-Type, Authorization";
-        HttpContext.Response.Headers["Access-Control-Allow-Methods"] =
-            "GET, POST, PUT, DELETE, OPTIONS";
-    }
-
     // =========================================================
     //  RESUMO / CONTAGEM  ->  GET /api/OrdensServico/contagem
     // =========================================================
@@ -126,12 +113,12 @@ public class OrdensServicoController : ControllerBase
 
     // =========================================================
     //  PRE-FLIGHT (OPTIONS) PÚBLICO -> OPTIONS /api/OrdensServico/publico
+    // (pode existir, mas o middleware já trata; deixei como no-ops)
     // =========================================================
     [HttpOptions("publico")]
     [AllowAnonymous]
     public IActionResult OptionsPublic()
     {
-        AddCorsHeaders();
         return Ok();
     }
 
@@ -167,8 +154,6 @@ public class OrdensServicoController : ControllerBase
 
         _db.OrdensServico.Add(os);
         await _db.SaveChangesAsync();
-
-        AddCorsHeaders(); // garante o header também na resposta do POST
 
         return CreatedAtAction(nameof(GetById), new { id = os.Id }, os);
     }
@@ -221,3 +206,4 @@ public class StatusDto
 {
     public string? Status { get; set; }
 }
+

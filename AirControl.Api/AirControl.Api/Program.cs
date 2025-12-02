@@ -1,8 +1,13 @@
 ﻿using AirControl.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Http;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// ================================
+// CONFIGURAÇÃO DE SERVIÇOS
+// ================================
 
 // Swagger / OpenAPI
 builder.Services.AddEndpointsApiExplorer();
@@ -49,19 +54,11 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Controllers
 builder.Services.AddControllers();
 
-// CORS – política padrão liberando geral
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(policy =>
-    {
-        policy
-            .AllowAnyOrigin()
-            .AllowAnyHeader()
-            .AllowAnyMethod();
-    });
-});
-
 var app = builder.Build();
+
+// ================================
+// PIPELINE HTTP
+// ================================
 
 app.UseSwagger();
 app.UseSwaggerUI(c =>
@@ -74,17 +71,33 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// aplica CORS para tudo
-app.UseCors();
+// ================================
+// MIDDLEWARE DE CORS MANUAL (GLOBAL)
+// ================================
+app.Use(async (context, next) =>
+{
+    // origem do seu front (Vercel)
+    context.Response.Headers["Access-Control-Allow-Origin"] = "https://aircontrolos-web.vercel.app";
+    context.Response.Headers["Vary"] = "Origin";
+    context.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization";
+    context.Response.Headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";
+
+    // pré-flight: responde direto
+    if (HttpMethods.IsOptions(context.Request.Method))
+    {
+        context.Response.StatusCode = StatusCodes.Status200OK;
+        await context.Response.CompleteAsync();
+        return;
+    }
+
+    await next();
+});
 
 app.UseAuthorization();
 
-// Handler genérico para qualquer OPTIONS (pré-flight)
-app.MapMethods("{*path}", new[] { "OPTIONS" }, () => Results.Ok())
-   .AllowAnonymous();
-
 app.MapControllers();
 
+// Rotas simples
 app.MapGet("/", () => Results.Ok("API AirControlOS funcionando 🚀"))
    .AllowAnonymous();
 
