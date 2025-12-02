@@ -94,6 +94,7 @@ public class OrdensServicoController : ControllerBase
     //  CRIAR OS (privado, tela interna) -> POST /api/OrdensServico
     // =========================================================
     [HttpPost]
+    // [Authorize] // se quiser travar depois
     public async Task<IActionResult> Post([FromBody] OrdemServico os)
     {
         if (os == null)
@@ -113,7 +114,7 @@ public class OrdensServicoController : ControllerBase
 
     // =========================================================
     //  PRE-FLIGHT (OPTIONS) PÚBLICO -> OPTIONS /api/OrdensServico/publico
-    // (pode existir, mas o middleware já trata; deixei como no-ops)
+    //  (nem seria obrigatório, mas deixei explícito)
     // =========================================================
     [HttpOptions("publico")]
     [AllowAnonymous]
@@ -141,7 +142,7 @@ public class OrdensServicoController : ControllerBase
         var os = new OrdemServico
         {
             ClienteId = clienteId,
-            TecnicoId = null,
+            TecnicoId = null, // público não define
             Descricao = dto.Descricao,
             Prioridade = dto.Prioridade ?? "Baixa",
             Status = dto.Status ?? "Aberta",
@@ -159,7 +160,7 @@ public class OrdensServicoController : ControllerBase
     }
 
     // =========================================================
-    //  ALTERAR STATUS -> PUT /api/OrdensServico/{id}/status
+    //  ALTERAR STATUS (dashboard) -> PUT /api/OrdensServico/{id}/status
     // =========================================================
     [HttpPut("{id:int}/status")]
     public async Task<IActionResult> PutStatus(int id, [FromBody] StatusDto body)
@@ -171,6 +172,7 @@ public class OrdensServicoController : ControllerBase
         if (!string.IsNullOrWhiteSpace(novo))
         {
             os.Status = novo;
+
             os.DataConclusao = novo.Contains("Conclu", StringComparison.OrdinalIgnoreCase)
                 ? DateTime.Now
                 : null;
@@ -206,4 +208,3 @@ public class StatusDto
 {
     public string? Status { get; set; }
 }
-

@@ -1,15 +1,23 @@
 ﻿using AirControl.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
-using Microsoft.AspNetCore.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // ================================
-// CONFIGURAÇÃO DE SERVIÇOS
+// DB (PostgreSQL no Render)
 // ================================
+builder.Services.AddDbContext<AppDbContext>(options =>
+{
+    var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
+    options.UseNpgsql(connStr);
+});
 
-// Swagger / OpenAPI
+// ================================
+// CONTROLLERS + SWAGGER
+// ================================
+builder.Services.AddControllers();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -44,22 +52,30 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// DbContext (PostgreSQL no Render)
-builder.Services.AddDbContext<AppDbContext>(options =>
+// ================================
+// CORS GLOBAL (vale pra toda API)
+// ================================
+builder.Services.AddCors(options =>
 {
-    var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
-    options.UseNpgsql(connStr);
+    options.AddDefaultPolicy(policy =>
+    {
+        policy
+            .WithOrigins(
+                "https://aircontrolos-web.vercel.app",
+                "https://aircontrolos-web-git-main-franciele-luchettas-projects.vercel.app"
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+        // se algum dia usar cookies/autorização de browser:
+        // .AllowCredentials();
+    });
 });
-
-// Controllers
-builder.Services.AddControllers();
 
 var app = builder.Build();
 
 // ================================
 // PIPELINE HTTP
 // ================================
-
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -71,27 +87,8 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// ================================
-// MIDDLEWARE DE CORS MANUAL (GLOBAL)
-// ================================
-app.Use(async (context, next) =>
-{
-    // origem do seu front (Vercel)
-    context.Response.Headers["Access-Control-Allow-Origin"] = "https://aircontrolos-web.vercel.app";
-    context.Response.Headers["Vary"] = "Origin";
-    context.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization";
-    context.Response.Headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";
-
-    // pré-flight: responde direto
-    if (HttpMethods.IsOptions(context.Request.Method))
-    {
-        context.Response.StatusCode = StatusCodes.Status200OK;
-        await context.Response.CompleteAsync();
-        return;
-    }
-
-    await next();
-});
+// CORS global – DEPOIS de UseRouting e ANTES de UseAuthorization
+app.UseCors();
 
 app.UseAuthorization();
 
