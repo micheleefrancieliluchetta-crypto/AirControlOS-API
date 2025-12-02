@@ -58,10 +58,9 @@ builder.Services.AddControllers();
 // ================================
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddPolicy("PermitirVercel", policy =>
     {
-        policy
-            .AllowAnyOrigin()  // libera qualquer origem (Vercel, localhost, etc.)
+        policy.WithOrigins("https://aircontrolos-web.vercel.app") // Sua URL do front
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
