@@ -3,6 +3,7 @@ using System;
 using AirControl.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AirControl.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251203035523_AddEmpresas")]
+    partial class AddEmpresas
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -91,16 +94,6 @@ namespace AirControl.Api.Migrations
                         .HasDatabaseName("IX_Empresas_Cnpj");
 
                     b.ToTable("Empresas", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Ativo = true,
-                            Cnpj = "00.000.000/0000-00",
-                            NomeFantasia = "Maxi Ar Condicionado",
-                            RazaoSocial = "Maxi Ar Condicionado LTDA"
-                        });
                 });
 
             modelBuilder.Entity("AirControl.Api.Models.Foto", b =>

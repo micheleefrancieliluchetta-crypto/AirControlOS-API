@@ -14,6 +14,10 @@ namespace AirControl.Api.Models
         public int? TecnicoId { get; set; }
         public Tecnico? Tecnico { get; set; }   // <— navegação
 
+        public int? EmpresaId { get; set; }      // FK opcional
+        public Empresa? Empresa { get; set; }    // navegação
+
+
         public string? Descricao { get; set; }
         public string? Prioridade { get; set; } // Baixa/Média/Alta/Crítica
         public string? Status { get; set; }     // Aberta/Em Andamento/Concluída

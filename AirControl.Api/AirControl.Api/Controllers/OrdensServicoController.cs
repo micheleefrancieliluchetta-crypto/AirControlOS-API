@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Cors;
 using AirControl.Api.Data;
 using AirControl.Api.Models;
 using AirControl.Api.Models.Dtos;
@@ -9,10 +10,22 @@ namespace AirControl.Api.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[EnableCors("AllowAll")] // garante uso da policy AllowAll neste controller
 public class OrdensServicoController : ControllerBase
 {
     private readonly AppDbContext _db;
     public OrdensServicoController(AppDbContext db) => _db = db;
+
+    // ---------------------------------------------------------
+    // Pequeno helper para garantir headers de CORS na resposta
+    // (extra de segurança além do middleware)
+    // ---------------------------------------------------------
+    private void AddCorsHeaders()
+    {
+        HttpContext.Response.Headers["Access-Control-Allow-Origin"] = "*";
+        HttpContext.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization";
+        HttpContext.Response.Headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";
+    }
 
     // =========================================================
     //  RESUMO / CONTAGEM  ->  GET /api/OrdensServico/contagem
@@ -24,6 +37,8 @@ public class OrdensServicoController : ControllerBase
         var abertas = await _db.OrdensServico.CountAsync(o => o.Status == "Aberta");
         var emAndamento = await _db.OrdensServico.CountAsync(o => o.Status == "Em Andamento");
         var concluidas = await _db.OrdensServico.CountAsync(o => o.Status == "Concluída");
+
+        AddCorsHeaders();
 
         return Ok(new
         {
@@ -47,6 +62,7 @@ public class OrdensServicoController : ControllerBase
         var query = _db.OrdensServico
             .Include(o => o.Cliente)
             .Include(o => o.Tecnico)
+            .Include(o => o.Empresa)   // 👈 inclui empresa nas consultas
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(q))
@@ -72,6 +88,8 @@ public class OrdensServicoController : ControllerBase
             .Take(pageSize)
             .ToListAsync();
 
+        AddCorsHeaders();
+
         return new { total, itens };
     }
 
@@ -85,7 +103,10 @@ public class OrdensServicoController : ControllerBase
             .Include(o => o.Cliente)
             .Include(o => o.Tecnico)
             .Include(o => o.Fotos)
+            .Include(o => o.Empresa)   // 👈 inclui empresa também no detalhe
             .FirstOrDefaultAsync(o => o.Id == id);
+
+        AddCorsHeaders();
 
         return os is null ? NotFound() : os;
     }
@@ -106,20 +127,29 @@ public class OrdensServicoController : ControllerBase
         if (string.IsNullOrWhiteSpace(os.Status))
             os.Status = "Aberta";
 
+        if (string.IsNullOrWhiteSpace(os.Prioridade))
+            os.Prioridade = "Baixa";
+
+        // 👇 NOVO: se não vier EmpresaId, assume que é a Maxi (Id = 1)
+        if (os.EmpresaId == null)
+            os.EmpresaId = 1;
+
         _db.OrdensServico.Add(os);
         await _db.SaveChangesAsync();
+
+        AddCorsHeaders();
 
         return CreatedAtAction(nameof(GetById), new { id = os.Id }, os);
     }
 
     // =========================================================
     //  PRE-FLIGHT (OPTIONS) PÚBLICO -> OPTIONS /api/OrdensServico/publico
-    //  (nem seria obrigatório, mas deixei explícito)
     // =========================================================
     [HttpOptions("publico")]
     [AllowAnonymous]
     public IActionResult OptionsPublic()
     {
+        AddCorsHeaders();
         return Ok();
     }
 
@@ -150,11 +180,16 @@ public class OrdensServicoController : ControllerBase
             Endereco = dto.Endereco,
             Lat = dto.Lat,
             Lng = dto.Lng,
-            DataAbertura = DateTime.Now
+            DataAbertura = DateTime.Now,
+
+            // 👇 NOVO: sempre Maxi por padrão (Id = 1)
+            EmpresaId = 1
         };
 
         _db.OrdensServico.Add(os);
         await _db.SaveChangesAsync();
+
+        AddCorsHeaders();
 
         return CreatedAtAction(nameof(GetById), new { id = os.Id }, os);
     }
@@ -173,12 +208,15 @@ public class OrdensServicoController : ControllerBase
         {
             os.Status = novo;
 
+            // se marcar como concluída, grava DataConclusao
             os.DataConclusao = novo.Contains("Conclu", StringComparison.OrdinalIgnoreCase)
                 ? DateTime.Now
                 : null;
 
             await _db.SaveChangesAsync();
         }
+
+        AddCorsHeaders();
 
         return NoContent();
     }
@@ -198,6 +236,8 @@ public class OrdensServicoController : ControllerBase
 
         _db.OrdensServico.Remove(os);
         await _db.SaveChangesAsync();
+
+        AddCorsHeaders();
 
         return NoContent();
     }
