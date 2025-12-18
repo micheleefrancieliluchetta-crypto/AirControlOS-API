@@ -1,23 +1,18 @@
-﻿using AirControl.Api.Data;
+using AirControl.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ================================
-// DB (PostgreSQL no Render)
-// ================================
+// =============== DB (PostgreSQL) ===============
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
     options.UseNpgsql(connStr);
 });
 
-// ================================
-// CONTROLLERS + SWAGGER
-// ================================
+// =============== CONTROLLERS + SWAGGER ===============
 builder.Services.AddControllers();
-
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -52,30 +47,27 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// ================================
-// CORS GLOBAL (vale pra toda API)
-// ================================
+// =============== CORS ===============
+const string CorsPolicyName = "AllowAirControlWeb";
+
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(policy =>
+    options.AddPolicy(CorsPolicyName, policy =>
     {
         policy
+            // libera seu front no Vercel (pode deixar só o principal)
             .WithOrigins(
                 "https://aircontrolos-web.vercel.app",
                 "https://aircontrolos-web-git-main-franciele-luchettas-projects.vercel.app"
             )
             .AllowAnyHeader()
             .AllowAnyMethod();
-        // se algum dia usar cookies/autorização de browser:
-        // .AllowCredentials();
     });
 });
 
 var app = builder.Build();
 
-// ================================
-// PIPELINE HTTP
-// ================================
+// =============== PIPELINE HTTP ===============
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -87,18 +79,18 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// CORS global – DEPOIS de UseRouting e ANTES de UseAuthorization
-app.UseCors();
+// **CORS TEM QUE VIR AQUI**
+app.UseCors(CorsPolicyName);
+
+// se você tiver autenticação JWT, vem aqui:
+// app.UseAuthentication();
 
 app.UseAuthorization();
 
 app.MapControllers();
 
-// Rotas simples
-app.MapGet("/", () => Results.Ok("API AirControlOS funcionando 🚀"))
-   .AllowAnonymous();
-
-app.MapGet("/healthz", () => Results.Ok("ok"))
-   .AllowAnonymous();
+// Rotinhas simples
+app.MapGet("/", () => Results.Ok("API AirControlOS funcionando 🚀")).AllowAnonymous();
+app.MapGet("/healthz", () => Results.Ok("ok")).AllowAnonymous();
 
 app.Run();
