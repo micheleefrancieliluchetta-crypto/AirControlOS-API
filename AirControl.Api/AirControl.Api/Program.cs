@@ -4,22 +4,25 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+// ================== CORS ==================
+const string CorsPolicyName = "AllowAirControlWeb";
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy(name: MyAllowSpecificOrigins,
-        policy =>
-        {
-            policy
-                .WithOrigins(
-                    "https://aircontrolos-web.vercel.app", // produção (Vercel)
-                    "http://localhost:5500",               // seu dev se precisar
-                    "http://127.0.0.1:5500"
-                )
-                .AllowAnyHeader()
-                .AllowAnyMethod();
-        });
+    options.AddPolicy(CorsPolicyName, policy =>
+    {
+        policy
+            // ORIGENS QUE PODEM CHAMAR A API
+            .WithOrigins(
+                "https://aircontrolos-web.vercel.app", // Vercel produção
+                "https://aircontrolos-web-git-main-franciele-luchettas-projects.vercel.app", // preview
+                "http://localhost:5500",               // dev
+                "http://127.0.0.1:5500"               // dev
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+            // .AllowCredentials(); // só se você usar cookies/autenticação por cookie
+    });
 });
 
 // =============== DB (PostgreSQL) ===============
@@ -31,6 +34,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // =============== CONTROLLERS + SWAGGER ===============
 builder.Services.AddControllers();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -65,24 +69,6 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// =============== CORS ===============
-const string CorsPolicyName = "AllowAirControlWeb";
-
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy(CorsPolicyName, policy =>
-    {
-        policy
-            // libera seu front no Vercel (pode deixar só o principal)
-            .WithOrigins(
-                "https://aircontrolos-web.vercel.app",
-                "https://aircontrolos-web-git-main-franciele-luchettas-projects.vercel.app"
-            )
-            .AllowAnyHeader()
-            .AllowAnyMethod();
-    });
-});
-
 var app = builder.Build();
 
 // =============== PIPELINE HTTP ===============
@@ -97,17 +83,17 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// **CORS TEM QUE VIR AQUI**
+// *** CORS AQUI, DEPOIS DO UseRouting E ANTES DE AUTH ***
 app.UseCors(CorsPolicyName);
 
-// se você tiver autenticação JWT, vem aqui:
+// Se tiver JWT:
 // app.UseAuthentication();
 
 app.UseAuthorization();
 
 app.MapControllers();
 
-// Rotinhas simples
+// Rotas simples de teste
 app.MapGet("/", () => Results.Ok("API AirControlOS funcionando 🚀")).AllowAnonymous();
 app.MapGet("/healthz", () => Results.Ok("ok")).AllowAnonymous();
 
