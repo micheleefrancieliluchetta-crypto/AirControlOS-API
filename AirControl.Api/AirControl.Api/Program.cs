@@ -19,10 +19,6 @@ builder.Services.AddCors(options =>
             )
             .AllowAnyHeader()
             .AllowAnyMethod();
-
-        // Se um dia você passar token via cookie/sessão, aí sim:
-        // .AllowCredentials();
-        // (mas nesse caso NÃO pode usar AllowAnyOrigin)
     });
 });
 
@@ -44,7 +40,6 @@ builder.Services.AddSwaggerGen(c =>
         Version = "v1"
     });
 
-    // Bearer Auth no Swagger (se você usa JWT)
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -73,29 +68,25 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// =============== PIPELINE (ORDEM IMPORTA!) ===============
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-else
-{
-    // No Render você também pode deixar o Swagger ligado se quiser:
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// =============== PIPELINE ===============
+app.UseSwagger();
+app.UseSwaggerUI();
 
-app.UseHttpsRedirection();
+// (se quiser, pode comentar isso em Render se atrapalhar):
+// app.UseHttpsRedirection();
 
 app.UseRouting();
 
-// ✅ AQUI é onde muita gente erra: CORS tem que ser aplicado ANTES do MapControllers
 app.UseCors(MyAllowSpecificOrigins);
 
 app.UseAuthentication();
 app.UseAuthorization();
 
+// ✅ ENDPOINT QUE O RENDER USA PARA HEALTH CHECK
+app.MapGet("/healthz", () => Results.Ok("ok"));
+
+// Seus controllers da API
 app.MapControllers();
 
 app.Run();
+
