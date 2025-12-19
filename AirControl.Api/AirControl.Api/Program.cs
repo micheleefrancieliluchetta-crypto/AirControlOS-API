@@ -4,7 +4,7 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ================== CORS ==================
+// =================== CORS ===================
 const string CorsPolicyName = "AllowAirControlWeb";
 
 builder.Services.AddCors(options =>
@@ -12,16 +12,15 @@ builder.Services.AddCors(options =>
     options.AddPolicy(CorsPolicyName, policy =>
     {
         policy
-            // ORIGENS QUE PODEM CHAMAR A API
             .WithOrigins(
-                "https://aircontrolos-web.vercel.app", // Vercel produção
-                "https://aircontrolos-web-git-main-franciele-luchettas-projects.vercel.app", // preview
-                "http://localhost:5500",               // dev
-                "http://127.0.0.1:5500"               // dev
+                "https://aircontrolos-web.vercel.app", // FRONT em produção (Vercel)
+                "http://localhost:5500",               // FRONT em dev
+                "http://127.0.0.1:5500"
             )
             .AllowAnyHeader()
             .AllowAnyMethod();
-            // .AllowCredentials(); // só se você usar cookies/autenticação por cookie
+            // Se um dia usar cookies/sessão:
+            // .AllowCredentials();
     });
 });
 
@@ -34,7 +33,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // =============== CONTROLLERS + SWAGGER ===============
 builder.Services.AddControllers();
-
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -79,21 +77,23 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = "swagger";
 });
 
+app.UseHttpsRedirection();
+
 app.UseStaticFiles();
 
 app.UseRouting();
 
-// *** CORS AQUI, DEPOIS DO UseRouting E ANTES DE AUTH ***
+// *** CORS TEM QUE FICAR AQUI ***
 app.UseCors(CorsPolicyName);
 
-// Se tiver JWT:
+// Se tiver autenticação JWT, entra aqui
 // app.UseAuthentication();
 
 app.UseAuthorization();
 
 app.MapControllers();
 
-// Rotas simples de teste
+// Rotas simples
 app.MapGet("/", () => Results.Ok("API AirControlOS funcionando 🚀")).AllowAnonymous();
 app.MapGet("/healthz", () => Results.Ok("ok")).AllowAnonymous();
 
