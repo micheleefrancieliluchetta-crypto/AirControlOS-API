@@ -4,19 +4,13 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
-
-// =============== CORS ===============
+// =============== CORS (liberado pra geral, pra não ter erro) ===============
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy(name: MyAllowSpecificOrigins, policy =>
+    options.AddPolicy("AllowAll", policy =>
     {
         policy
-            .WithOrigins(
-                "https://aircontrolos-web.vercel.app",
-                "http://localhost:5500",
-                "http://127.0.0.1:5500"
-            )
+            .AllowAnyOrigin()   // depois, se quiser, restringimos
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -40,6 +34,7 @@ builder.Services.AddSwaggerGen(c =>
         Version = "v1"
     });
 
+    // Se você estiver usando JWT, deixa isso. Se não, também não atrapalha.
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -72,21 +67,23 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// (se quiser, pode comentar isso em Render se atrapalhar):
+// Se quiser, pode comentar em produção se der problema com redirect:
 // app.UseHttpsRedirection();
 
 app.UseRouting();
 
-app.UseCors(MyAllowSpecificOrigins);
+// ✅ CORS precisa vir ANTES dos controllers
+app.UseCors("AllowAll");
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-// ✅ ENDPOINT QUE O RENDER USA PARA HEALTH CHECK
+// ✅ Endpoint de health check pro Render
 app.MapGet("/healthz", () => Results.Ok("ok"));
 
-// Seus controllers da API
+// Controllers da sua API
 app.MapControllers();
 
 app.Run();
+
 
