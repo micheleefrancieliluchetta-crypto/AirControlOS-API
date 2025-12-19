@@ -4,23 +4,25 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// =================== CORS ===================
-const string CorsPolicyName = "AllowAirControlWeb";
+var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
+// =============== CORS ===============
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy(CorsPolicyName, policy =>
+    options.AddPolicy(name: MyAllowSpecificOrigins, policy =>
     {
         policy
             .WithOrigins(
-                "https://aircontrolos-web.vercel.app", // FRONT em produção (Vercel)
-                "http://localhost:5500",               // FRONT em dev
+                "https://aircontrolos-web.vercel.app",
+                "http://localhost:5500",
                 "http://127.0.0.1:5500"
             )
             .AllowAnyHeader()
             .AllowAnyMethod();
-            // Se um dia usar cookies/sessão:
-            // .AllowCredentials();
+
+        // Se um dia você passar token via cookie/sessão, aí sim:
+        // .AllowCredentials();
+        // (mas nesse caso NÃO pode usar AllowAnyOrigin)
     });
 });
 
@@ -42,13 +44,15 @@ builder.Services.AddSwaggerGen(c =>
         Version = "v1"
     });
 
+    // Bearer Auth no Swagger (se você usa JWT)
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "Insira o token JWT assim: Bearer {seu_token}",
         Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
+        Description = "Digite: Bearer {seu_token}"
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -62,39 +66,36 @@ builder.Services.AddSwaggerGen(c =>
                     Id = "Bearer"
                 }
             },
-            Array.Empty<string>()
+            new string[] {}
         }
     });
 });
 
 var app = builder.Build();
 
-// =============== PIPELINE HTTP ===============
-app.UseSwagger();
-app.UseSwaggerUI(c =>
+// =============== PIPELINE (ORDEM IMPORTA!) ===============
+if (app.Environment.IsDevelopment())
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "AirControl.Api v1");
-    c.RoutePrefix = "swagger";
-});
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+else
+{
+    // No Render você também pode deixar o Swagger ligado se quiser:
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.UseHttpsRedirection();
 
-app.UseStaticFiles();
-
 app.UseRouting();
 
-// *** CORS TEM QUE FICAR AQUI ***
-app.UseCors(CorsPolicyName);
+// ✅ AQUI é onde muita gente erra: CORS tem que ser aplicado ANTES do MapControllers
+app.UseCors(MyAllowSpecificOrigins);
 
-// Se tiver autenticação JWT, entra aqui
-// app.UseAuthentication();
-
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
-// Rotas simples
-app.MapGet("/", () => Results.Ok("API AirControlOS funcionando 🚀")).AllowAnonymous();
-app.MapGet("/healthz", () => Results.Ok("ok")).AllowAnonymous();
 
 app.Run();
