@@ -4,6 +4,24 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: MyAllowSpecificOrigins,
+        policy =>
+        {
+            policy
+                .WithOrigins(
+                    "https://aircontrolos-web.vercel.app", // produção (Vercel)
+                    "http://localhost:5500",               // seu dev se precisar
+                    "http://127.0.0.1:5500"
+                )
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        });
+});
+
 // =============== DB (PostgreSQL) ===============
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
