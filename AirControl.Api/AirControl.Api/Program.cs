@@ -78,8 +78,22 @@ app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 
-// ✅ Endpoint de health check pro Render
+// ✅ Health simples (só pra ver se a API respondeu)
 app.MapGet("/healthz", () => Results.Ok("ok"));
+
+// ✅ Health que testa conexão com o banco
+app.MapGet("/health", async (AppDbContext db) =>
+{
+    try
+    {
+        var ok = await db.Database.CanConnectAsync();
+        return ok ? Results.Ok("DB OK") : Results.Problem("DB FAIL");
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem("Erro ao conectar no banco: " + ex.Message);
+    }
+});
 
 // Controllers da sua API
 app.MapControllers();
