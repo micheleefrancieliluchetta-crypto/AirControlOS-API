@@ -4,39 +4,33 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ========= CORS =========
-const string CorsPolicy = "Frontends";
-
+// =============== CORS (liberado pra geral por enquanto) ===============
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy(name: CorsPolicy, policy =>
+    options.AddPolicy("AllowAll", policy =>
     {
         policy
-            .WithOrigins(
-                "https://aircontrolos-web.vercel.app", // produção (Vercel)
-                "http://localhost:5500",               // dev no Live Server
-                "http://127.0.0.1:5500"
-            )
+            .AllowAnyOrigin()
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
 });
 
-// ========= DB (PostgreSQL) =========
+// =============== DB (PostgreSQL) ===============
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
     options.UseNpgsql(connStr);
 });
 
-// ========= CONTROLLERS + SWAGGER =========
+// =============== CONTROLLERS + SWAGGER ===============
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "AirControl.Api",
+        Title = "AirControlOS API",
         Version = "v1"
     });
 
@@ -68,23 +62,36 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// ========= PIPELINE =========
+// =============== MIGRATIONS AUTOMÁTICAS ===============
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    try
+    {
+        db.Database.Migrate(); // cria/atualiza as tabelas no banco da Maxi
+        Console.WriteLine("Migrations aplicadas com sucesso.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("Erro ao aplicar migrations: " + ex.Message);
+    }
+}
+
+// =============== PIPELINE ===============
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// app.UseHttpsRedirection(); // deixa comentado se já estava
-
 app.UseRouting();
 
-// ⭐ CORS ANTES de Auth e Controllers
-app.UseCors(CorsPolicy);
+app.UseCors("AllowAll");
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Health checks
+// Health simples (Render)
 app.MapGet("/healthz", () => Results.Ok("ok"));
 
+// Health testando o banco
 app.MapGet("/health", async (AppDbContext db) =>
 {
     try
@@ -94,12 +101,11 @@ app.MapGet("/health", async (AppDbContext db) =>
     }
     catch (Exception ex)
     {
-        return Results.Problem("ERRO AO CONECTAR NO BANCO: " + ex.Message);
+        return Results.Problem("Erro ao conectar no banco: " + ex.Message);
     }
 });
 
+// Controllers da API
 app.MapControllers();
 
 app.Run();
-
-
