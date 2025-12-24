@@ -4,26 +4,32 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// =============== CORS (liberado pra geral, pra não ter erro) ===============
+// ========= CORS =========
+const string CorsPolicy = "Frontends";
+
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddPolicy(name: CorsPolicy, policy =>
     {
         policy
-            .AllowAnyOrigin()   // depois, se quiser, restringimos
+            .WithOrigins(
+                "https://aircontrolos-web.vercel.app", // produção (Vercel)
+                "http://localhost:5500",               // dev no Live Server
+                "http://127.0.0.1:5500"
+            )
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
 });
 
-// =============== DB (PostgreSQL) ===============
+// ========= DB (PostgreSQL) =========
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
     options.UseNpgsql(connStr);
 });
 
-// =============== CONTROLLERS + SWAGGER ===============
+// ========= CONTROLLERS + SWAGGER =========
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -34,7 +40,6 @@ builder.Services.AddSwaggerGen(c =>
         Version = "v1"
     });
 
-    // Se você estiver usando JWT, deixa isso. Se não, também não atrapalha.
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -63,39 +68,36 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// =============== PIPELINE ===============
+// ========= PIPELINE =========
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// Se quiser, pode comentar em produção se der problema com redirect:
-// app.UseHttpsRedirection();
+// app.UseHttpsRedirection(); // deixa comentado se já estava
 
 app.UseRouting();
 
-// ✅ CORS precisa vir ANTES dos controllers
-app.UseCors("AllowAll");
+// ⭐ CORS ANTES de Auth e Controllers
+app.UseCors(CorsPolicy);
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-// ✅ Health simples (só pra ver se a API respondeu)
+// Health checks
 app.MapGet("/healthz", () => Results.Ok("ok"));
 
-// ✅ Health que testa conexão com o banco
 app.MapGet("/health", async (AppDbContext db) =>
 {
     try
     {
         var ok = await db.Database.CanConnectAsync();
-        return ok ? Results.Ok("DB OK") : Results.Problem("DB FAIL");
+        return ok ? Results.Ok("DB OK") : Results.Problem("FALHA NO BANCO DE DADOS");
     }
     catch (Exception ex)
     {
-        return Results.Problem("Erro ao conectar no banco: " + ex.Message);
+        return Results.Problem("ERRO AO CONECTAR NO BANCO: " + ex.Message);
     }
 });
 
-// Controllers da sua API
 app.MapControllers();
 
 app.Run();
