@@ -14,6 +14,9 @@ namespace AirControl.Api.Data
         public DbSet<Foto> Fotos => Set<Foto>();
         public DbSet<Usuario> Usuarios => Set<Usuario>();
         public DbSet<PmocRegistro> PmocRegistros => Set<PmocRegistro>();
+        public DbSet<PmocPlano> PmocPlanos => Set<PmocPlano>();
+        public DbSet<Unidade> Unidade => Set<Unidade>();
+
 
         // NOVO: tabela de empresas
         public DbSet<Empresa> Empresas => Set<Empresa>();

@@ -3,6 +3,7 @@ using System;
 using AirControl.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AirControl.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251226184431_AddPmocPlano")]
+    partial class AddPmocPlano
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -281,41 +284,6 @@ namespace AirControl.Api.Migrations
                     b.ToTable("Tecnicos");
                 });
 
-            modelBuilder.Entity("AirControl.Api.Models.Unidade", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("Ativo")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Cidade")
-                        .IsRequired()
-                        .HasMaxLength(80)
-                        .HasColumnType("character varying(80)");
-
-                    b.Property<int>("EmpresaId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Endereco")
-                        .HasMaxLength(250)
-                        .HasColumnType("character varying(250)");
-
-                    b.Property<string>("Nome")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EmpresaId");
-
-                    b.ToTable("Unidade");
-                });
-
             modelBuilder.Entity("AirControl.Api.Models.Usuario", b =>
                 {
                     b.Property<int>("Id")
@@ -383,17 +351,6 @@ namespace AirControl.Api.Migrations
                     b.Navigation("Empresa");
 
                     b.Navigation("Tecnico");
-                });
-
-            modelBuilder.Entity("AirControl.Api.Models.Unidade", b =>
-                {
-                    b.HasOne("AirControl.Api.Models.Empresa", "Empresa")
-                        .WithMany()
-                        .HasForeignKey("EmpresaId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Empresa");
                 });
 
             modelBuilder.Entity("AirControl.Api.Models.Cliente", b =>
