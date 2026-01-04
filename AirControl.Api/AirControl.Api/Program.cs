@@ -4,13 +4,17 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// =============== CORS (liberado pra geral por enquanto) ===============
+// =============== CORS (liberado para o app do Vercel) ===============
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddPolicy("AllowAirControlWeb", policy =>
     {
         policy
-            .AllowAnyOrigin()
+            // origens que podem chamar a API
+            .WithOrigins(
+                "https://aircontrolos-web.vercel.app",
+                "https://aircontrolos-web-git-main-micheleefrancieliluchetta-crypto.vercel.app"
+            )
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -68,7 +72,7 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     try
     {
-        db.Database.Migrate(); // cria/atualiza as tabelas no banco da Maxi
+        db.Database.Migrate();
         Console.WriteLine("Migrations aplicadas com sucesso.");
     }
     catch (Exception ex)
@@ -77,13 +81,35 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+// =============== CORS MIDDLEWARE (garantia extra) ===============
+app.Use(async (context, next) =>
+{
+    // Cabeçalhos CORS sempre presentes
+    context.Response.Headers["Access-Control-Allow-Origin"] = "https://aircontrolos-web.vercel.app";
+    context.Response.Headers["Vary"] = "Origin";
+    context.Response.Headers["Access-Control-Allow-Headers"] =
+        "Origin, X-Requested-With, Content-Type, Accept, Authorization";
+    context.Response.Headers["Access-Control-Allow-Methods"] =
+        "GET, POST, PUT, DELETE, OPTIONS";
+
+    if (context.Request.Method == "OPTIONS")
+    {
+        context.Response.StatusCode = StatusCodes.Status200OK;
+        await context.Response.CompleteAsync();
+        return;
+    }
+
+    await next();
+});
+
 // =============== PIPELINE ===============
 app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseRouting();
 
-app.UseCors("AllowAll");
+// aplica a policy nomeada (funciona junto com o middleware acima)
+app.UseCors("AllowAirControlWeb");
 
 app.UseAuthentication();
 app.UseAuthorization();
