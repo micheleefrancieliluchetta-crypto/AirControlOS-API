@@ -42,9 +42,11 @@ namespace AirControl.Api.Controllers
             var registro = new PmocRegistro
             {
                 AparelhoHdvId = dto.AparelhoHdvId,
-                TecnicoEmail = email,                      // nunca nulo
-                Data = DateTime.UtcNow,                    // data de criação
-                ItensJson = dto.ItensJson ?? string.Empty  // garante string
+                TecnicoEmail = email,                 // nunca nulo
+                TecnicoNome = dto.TecnicoNome,       // vem do front
+                Data = DateTime.UtcNow,              // data de criação
+                ItensJson = dto.ItensJson ?? string.Empty,
+                ObservacoesTecnicas = dto.ObservacoesTecnicas
             };
 
             _context.PmocRegistros.Add(registro);
@@ -79,9 +81,15 @@ namespace AirControl.Api.Controllers
     public class CriarPmocRegistroDto
     {
         public int AparelhoHdvId { get; set; }
+
+        // JSON com os itens do checklist
         public string ItensJson { get; set; } = string.Empty;
 
-        // opcional, só para testes
+        // observações gerais do técnico
+        public string? ObservacoesTecnicas { get; set; }
+
+        // quem está registrando
         public string? TecnicoEmail { get; set; }
+        public string? TecnicoNome { get; set; }
     }
 }
