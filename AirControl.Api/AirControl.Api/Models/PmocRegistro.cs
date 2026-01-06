@@ -1,21 +1,26 @@
-﻿namespace AirControl.Api.Models
+﻿using System;
+
+namespace AirControl.Api.Models
 {
     public class PmocRegistro
     {
         public int Id { get; set; }
 
+        // ID do aparelho (HDV) lá do front
         public int AparelhoHdvId { get; set; }
 
         public DateTime Data { get; set; }
 
-        // JSON com o checklist (mesmo campo que já existia no banco)
-        public string ItensJson { get; set; } = string.Empty;
+        // <<< ESSA É A PROPRIEDADE QUE ESTAVA FALTANDO
+        public string ChecklistJson { get; set; } = string.Empty;
 
-        // observações gerais do técnico
+        // Observações técnicas gerais (caixa grande)
         public string? ObservacoesTecnicas { get; set; }
 
-        // quem fez o PMOC
-        public string TecnicoEmail { get; set; } = string.Empty;
+        // Nome do técnico que fez o PMOC
         public string? TecnicoNome { get; set; }
+
+        // Se depois você quiser salvar email/usuário, usa aqui
+        public string? TecnicoEmail { get; set; }
     }
 }
