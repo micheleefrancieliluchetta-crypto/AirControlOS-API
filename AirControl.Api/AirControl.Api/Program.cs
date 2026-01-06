@@ -7,13 +7,13 @@ var builder = WebApplication.CreateBuilder(args);
 // =============== CORS (liberado para o app do Vercel) ===============
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAirControlWeb", policy =>
+    options.AddPolicy("AllowWebApp", policy =>
     {
         policy
-            // origens que podem chamar a API
             .WithOrigins(
-                "https://aircontrolos-web.vercel.app",
-                "https://aircontrolos-web-git-main-micheleefrancieliluchetta-crypto.vercel.app"
+                "https://aircontrolos-web.vercel.app",   // seu front no Vercel
+                "http://localhost:5500",                 // opcional: testes locais
+                "http://127.0.0.1:5500"
             )
             .AllowAnyHeader()
             .AllowAnyMethod();
