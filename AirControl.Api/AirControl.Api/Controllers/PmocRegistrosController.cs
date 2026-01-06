@@ -1,17 +1,12 @@
-﻿using AirControl.Api.Data;
+using AirControl.Api.Data;
 using AirControl.Api.Models;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace AirControl.Api.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
-    // [Authorize]   // removido por enquanto
+    [Route("api/[controller]")] // => /api/PmocRegistros
     public class PmocRegistrosController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -28,25 +23,19 @@ namespace AirControl.Api.Controllers
             if (dto == null)
                 return BadRequest("Dados do PMOC não enviados.");
 
-            // 1) tenta pegar do token (quando você voltar a usar [Authorize])
-            var email = User.Identity?.Name;
-
-            // 2) se não tiver no token, usa o que veio no DTO
-            if (string.IsNullOrWhiteSpace(email))
-                email = dto.TecnicoEmail;
-
-            // 3) se ainda estiver vazio, usa um valor padrão
-            if (string.IsNullOrWhiteSpace(email))
-                email = "pmoc@aircontrolos"; // <-- NÃO FICA NULO NO BANCO
+            if (dto.AparelhoHdvId <= 0)
+                return BadRequest("AparelhoHdvId inválido.");
 
             var registro = new PmocRegistro
             {
-                AparelhoHdvId = dto.AparelhoHdvId,
-                TecnicoEmail = email,                 // nunca nulo
-                TecnicoNome = dto.TecnicoNome,       // vem do front
-                Data = DateTime.UtcNow,              // data de criação
-                ItensJson = dto.ItensJson ?? string.Empty,
-                ObservacoesTecnicas = dto.ObservacoesTecnicas
+                AparelhoHdvId      = dto.AparelhoHdvId,
+                Data               = string.IsNullOrWhiteSpace(dto.Data)
+                                        ? DateTime.UtcNow
+                                        : DateTime.Parse(dto.Data),
+                ChecklistJson      = dto.ChecklistJson ?? "[]",
+                ObservacoesTecnicas = dto.ObservacoesTecnicas ?? string.Empty,
+                TecnicoNome        = dto.TecnicoNome ?? string.Empty,
+                TecnicoEmail       = dto.TecnicoEmail ?? "pmoc@aircontrolos"
             };
 
             _context.PmocRegistros.Add(registro);
@@ -56,40 +45,29 @@ namespace AirControl.Api.Controllers
         }
 
         // GET api/PmocRegistros/{id}
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<PmocRegistro>> ObterPorId(int id)
         {
-            var registro = await _context.PmocRegistros.FindAsync(id);
-            if (registro == null) return NotFound();
-            return registro;
+          var registro = await _context.PmocRegistros.FindAsync(id);
+          if (registro == null) return NotFound();
+          return registro;
         }
 
-        // GET api/PmocRegistros/por-aparelho/{aparelhoId}
-        [HttpGet("por-aparelho/{aparelhoId}")]
-        public async Task<ActionResult<IEnumerable<PmocRegistro>>> ListarPorAparelho(int aparelhoId)
+        // ajuda em pré-flight OPTIONS (não é obrigatório, mas não atrapalha)
+        [HttpOptions]
+        public IActionResult Options()
         {
-            var registros = await _context.PmocRegistros
-                .Where(p => p.AparelhoHdvId == aparelhoId)
-                .OrderByDescending(p => p.Data)
-                .ToListAsync();
-
-            return registros;
+            return Ok();
         }
     }
 
-    // DTO que o frontend vai enviar
     public class CriarPmocRegistroDto
     {
         public int AparelhoHdvId { get; set; }
-
-        // JSON com os itens do checklist
-        public string ItensJson { get; set; } = string.Empty;
-
-        // observações gerais do técnico
+        public string? Data { get; set; }
+        public string ChecklistJson { get; set; } = "[]";
         public string? ObservacoesTecnicas { get; set; }
-
-        // quem está registrando
-        public string? TecnicoEmail { get; set; }
         public string? TecnicoNome { get; set; }
+        public string? TecnicoEmail { get; set; }
     }
 }
