@@ -17,8 +17,6 @@ builder.Services.AddCors(options =>
         policy
             .WithOrigins(
                 "https://aircontrolos-web.vercel.app",
-                "http://localhost:5173",
-                "http://localhost:3000"
             )
             .AllowAnyHeader()
             .AllowAnyMethod();
