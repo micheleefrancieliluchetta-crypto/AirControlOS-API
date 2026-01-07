@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace AirControl.Api.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")] // => /api/PmocRegistros
+    [Route("api/[controller]")]  // => /api/PmocRegistros
     public class PmocRegistrosController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -15,6 +15,17 @@ namespace AirControl.Api.Controllers
         public PmocRegistrosController(AppDbContext context)
         {
             _context = context;
+        }
+
+        // DTO que a API recebe
+        public class CriarPmocRegistroDto
+        {
+            public int AparelhoHdvId { get; set; }
+            public string? Data { get; set; }                 // "2026-01-07"
+            public string? ChecklistJson { get; set; } = "[]";
+            public string? ObservacoesTecnicas { get; set; }
+            public string? TecnicoNome { get; set; }
+            public string? TecnicoEmail { get; set; }
         }
 
         // POST /api/PmocRegistros
@@ -27,38 +38,34 @@ namespace AirControl.Api.Controllers
             if (dto.AparelhoHdvId <= 0)
                 return BadRequest("AparelhoHdvId inválido.");
 
-            // ======== TRATANDO A DATA PARA NÃO DAR ERRO NO POSTGRES ========
-            DateTime dataFinal;
-
+            // === CONCERTO DO DateTime ===
+            DateTime dataUtc;
             if (string.IsNullOrWhiteSpace(dto.Data))
             {
-                // sem data -> agora em UTC (Kind = Utc)
-                dataFinal = DateTime.UtcNow;
+                dataUtc = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc);
             }
             else
             {
-                if (!DateTime.TryParse(dto.Data, out var parsed))
+                if (!DateTime.TryParse(dto.Data, out var dataParsed))
                     return BadRequest("Data inválida.");
 
-                // a string "2026-01-07" vira DateTime com Kind Unspecified.
-                // Aqui forçamos para UTC pra evitar o erro do Npgsql.
-                dataFinal = DateTime.SpecifyKind(parsed, DateTimeKind.Utc);
+                dataUtc = DateTime.SpecifyKind(dataParsed, DateTimeKind.Utc);
             }
-            // =================================================================
+            // =============================
 
             var registro = new PmocRegistro
             {
                 AparelhoHdvId       = dto.AparelhoHdvId,
-                Data                = dataFinal,
+                Data                = dataUtc,
                 ChecklistJson       = dto.ChecklistJson ?? "[]",
-                ObservacoesTecnicas = dto.ObservacoesTecnicas ?? string.Empty
-                // se depois quiser de novo TecnicoNome/Email é só adicionar aqui.
+                ObservacoesTecnicas = dto.ObservacoesTecnicas ?? string.Empty,
+                TecnicoNome         = dto.TecnicoNome ?? string.Empty,
+                TecnicoEmail        = dto.TecnicoEmail ?? string.Empty
             };
 
             _context.PmocRegistros.Add(registro);
             await _context.SaveChangesAsync();
 
-            // retorna 201 com o registro criado
             return CreatedAtAction(nameof(ObterPorId), new { id = registro.Id }, registro);
         }
 
@@ -71,17 +78,12 @@ namespace AirControl.Api.Controllers
             return registro;
         }
 
-        // OPTIONS pra pré-flight CORS
+        // OPTIONS pra ajudar em preflight CORS
         [HttpOptions]
-        public IActionResult Options() => Ok();
-    }
-
-    // DTO usado no POST
-    public class CriarPmocRegistroDto
-    {
-        public int AparelhoHdvId        { get; set; }
-        public string? Data             { get; set; }
-        public string? ChecklistJson    { get; set; }
-        public string? ObservacoesTecnicas { get; set; }
+        public IActionResult Options()
+        {
+            return Ok();
+        }
     }
 }
+
