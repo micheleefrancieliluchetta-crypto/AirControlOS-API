@@ -3,12 +3,11 @@ using System.Threading.Tasks;
 using AirControl.Api.Data;
 using AirControl.Api.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace AirControl.Api.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]  // => /api/PmocRegistros
+    [Route("api/[controller]")] // => /api/PmocRegistros
     public class PmocRegistrosController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -28,22 +27,38 @@ namespace AirControl.Api.Controllers
             if (dto.AparelhoHdvId <= 0)
                 return BadRequest("AparelhoHdvId inválido.");
 
+            // ======== TRATANDO A DATA PARA NÃO DAR ERRO NO POSTGRES ========
+            DateTime dataFinal;
+
+            if (string.IsNullOrWhiteSpace(dto.Data))
+            {
+                // sem data -> agora em UTC (Kind = Utc)
+                dataFinal = DateTime.UtcNow;
+            }
+            else
+            {
+                if (!DateTime.TryParse(dto.Data, out var parsed))
+                    return BadRequest("Data inválida.");
+
+                // a string "2026-01-07" vira DateTime com Kind Unspecified.
+                // Aqui forçamos para UTC pra evitar o erro do Npgsql.
+                dataFinal = DateTime.SpecifyKind(parsed, DateTimeKind.Utc);
+            }
+            // =================================================================
+
             var registro = new PmocRegistro
             {
                 AparelhoHdvId       = dto.AparelhoHdvId,
-                Data                = string.IsNullOrWhiteSpace(dto.Data)
-                                         ? DateTime.UtcNow
-                                         : DateTime.Parse(dto.Data),
+                Data                = dataFinal,
                 ChecklistJson       = dto.ChecklistJson ?? "[]",
                 ObservacoesTecnicas = dto.ObservacoesTecnicas ?? string.Empty
-                // se algum dia quiser voltar com Técnico, pode completar aqui:
-                // TecnicoNome  = dto.TecnicoNome,
-                // TecnicoEmail = dto.TecnicoEmail
+                // se depois quiser de novo TecnicoNome/Email é só adicionar aqui.
             };
 
             _context.PmocRegistros.Add(registro);
             await _context.SaveChangesAsync();
 
+            // retorna 201 com o registro criado
             return CreatedAtAction(nameof(ObterPorId), new { id = registro.Id }, registro);
         }
 
@@ -52,13 +67,11 @@ namespace AirControl.Api.Controllers
         public async Task<ActionResult<PmocRegistro>> ObterPorId(int id)
         {
             var registro = await _context.PmocRegistros.FindAsync(id);
-            if (registro == null)
-                return NotFound();
-
+            if (registro == null) return NotFound();
             return registro;
         }
 
-        // ajuda em pré-flight OPTIONS (CORS)
+        // OPTIONS pra pré-flight CORS
         [HttpOptions]
         public IActionResult Options() => Ok();
     }
@@ -66,13 +79,9 @@ namespace AirControl.Api.Controllers
     // DTO usado no POST
     public class CriarPmocRegistroDto
     {
-        public int AparelhoHdvId { get; set; }
-        public string? Data { get; set; }
-        public string? ChecklistJson { get; set; }
+        public int AparelhoHdvId        { get; set; }
+        public string? Data             { get; set; }
+        public string? ChecklistJson    { get; set; }
         public string? ObservacoesTecnicas { get; set; }
-
-        // se quiser voltar com técnico depois:
-        // public string? TecnicoNome  { get; set; }
-        // public string? TecnicoEmail { get; set; }
     }
 }
