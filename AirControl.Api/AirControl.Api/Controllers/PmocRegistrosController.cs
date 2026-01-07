@@ -16,8 +16,8 @@ namespace AirControl.Api.Controllers
             _context = context;
         }
 
-        // POST api/PmocRegistros/salvar
-        [HttpPost("salvar")]
+        // POST api/PmocRegistros
+        [HttpPost]
         public async Task<IActionResult> Criar([FromBody] CriarPmocRegistroDto dto)
         {
             if (dto == null)
@@ -28,19 +28,18 @@ namespace AirControl.Api.Controllers
 
             var registro = new PmocRegistro
             {
-                AparelhoHdvId       = dto.AparelhoHdvId,
-                Data                = string.IsNullOrWhiteSpace(dto.Data)
-                                        ? DateTime.UtcNow
-                                        : DateTime.Parse(dto.Data),
+                AparelhoHdvId = dto.AparelhoHdvId,
+                Data = string.IsNullOrWhiteSpace(dto.Data)
+                            ? DateTime.UtcNow
+                            : DateTime.Parse(dto.Data),
                 ChecklistJson       = dto.ChecklistJson ?? "[]",
-                ObservacoesTecnicas = dto.ObservacoesTecnicas ?? string.Empty,
-                TecnicoNome         = dto.TecnicoNome ?? string.Empty,
-                TecnicoEmail        = dto.TecnicoEmail ?? "pmoc@aircontrolos"
+                ObservacoesTecnicas = dto.ObservacoesTecnicas ?? string.Empty
             };
 
             _context.PmocRegistros.Add(registro);
             await _context.SaveChangesAsync();
 
+            // retorna o registro criado (com Id gerado)
             return CreatedAtAction(nameof(ObterPorId), new { id = registro.Id }, registro);
         }
 
@@ -53,7 +52,7 @@ namespace AirControl.Api.Controllers
             return registro;
         }
 
-        // ajuda em pré-flight OPTIONS
+        // ajuda em pré-flight OPTIONS (CORS)
         [HttpOptions]
         public IActionResult Options()
         {
@@ -61,13 +60,12 @@ namespace AirControl.Api.Controllers
         }
     }
 
+    // DTO SIMPLES, sem nome de técnico
     public class CriarPmocRegistroDto
     {
-        public int    AparelhoHdvId       { get; set; }
-        public string? Data               { get; set; }
-        public string ChecklistJson       { get; set; } = "[]";
+        public int AparelhoHdvId { get; set; }
+        public string? Data { get; set; }
+        public string? ChecklistJson { get; set; }
         public string? ObservacoesTecnicas { get; set; }
-        public string? TecnicoNome        { get; set; }
-        public string? TecnicoEmail       { get; set; }
     }
 }
