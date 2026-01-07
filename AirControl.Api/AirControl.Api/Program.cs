@@ -7,7 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 // =============== CORS (liberado para o app do Vercel) ===============
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowWebApp", policy =>
+    options.AddPolicy("CorsPmoc", policy =>
     {
         policy
             .WithOrigins(
@@ -132,6 +132,12 @@ app.MapGet("/health", async (AppDbContext db) =>
 });
 
 // Controllers da API
+app.UseCors("CorsPmoc");
+
+app.UseAuthorization();
+
 app.MapControllers();
 
 app.Run();
+
+
