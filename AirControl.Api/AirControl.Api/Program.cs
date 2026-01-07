@@ -17,7 +17,6 @@ builder.Services.AddCors(options =>
         policy
             .WithOrigins(
                 "https://aircontrolos-web.vercel.app",
-            )
             .AllowAnyHeader()
             .AllowAnyMethod();
             // ⚠️ Só use AllowCredentials se você usa cookies/autenticação via navegador.
