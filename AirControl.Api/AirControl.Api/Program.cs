@@ -1,137 +1,57 @@
-using AirControl.Api.Data;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// =============== CORS (liberado para o app do Vercel) ===============
+// Controllers
+builder.Services.AddControllers();
+
+// Swagger (útil para testar no Render)
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+// ✅ CORS (Vercel + Locais)
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowWebApp", policy =>
+    options.AddPolicy("AllowFrontend", policy =>
     {
         policy
             .WithOrigins(
-                "https://aircontrolos-web.vercel.app",   // seu front no Vercel
-                "http://localhost:5500",                 // opcional: testes locais
-                "http://127.0.0.1:5500"
+                "https://aircontrolos-web.vercel.app",
+                "http://localhost:5173",
+                "http://localhost:3000"
             )
             .AllowAnyHeader()
             .AllowAnyMethod();
-    });
-});
-
-// =============== DB (PostgreSQL) ===============
-builder.Services.AddDbContext<AppDbContext>(options =>
-{
-    var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
-    options.UseNpgsql(connStr);
-});
-
-// =============== CONTROLLERS + SWAGGER ===============
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title = "AirControlOS API",
-        Version = "v1"
-    });
-
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        Scheme = "bearer",
-        BearerFormat = "JWT",
-        In = ParameterLocation.Header,
-        Description = "Digite: Bearer {seu_token}"
-    });
-
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            new string[] {}
-        }
+            // ⚠️ Só use AllowCredentials se você usa cookies/autenticação via navegador.
+            // .AllowCredentials();
     });
 });
 
 var app = builder.Build();
 
-// =============== MIGRATIONS AUTOMÁTICAS ===============
-using (var scope = app.Services.CreateScope())
+// ✅ Render / Proxy: garante que https e headers sejam interpretados corretamente atrás do load balancer
+app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    try
-    {
-        db.Database.Migrate();
-        Console.WriteLine("Migrations aplicadas com sucesso.");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine("Erro ao aplicar migrations: " + ex.Message);
-    }
-}
-
-// =============== CORS MIDDLEWARE (garantia extra) ===============
-app.Use(async (context, next) =>
-{
-    // Cabeçalhos CORS sempre presentes
-    context.Response.Headers["Access-Control-Allow-Origin"] = "https://aircontrolos-web.vercel.app";
-    context.Response.Headers["Vary"] = "Origin";
-    context.Response.Headers["Access-Control-Allow-Headers"] =
-        "Origin, X-Requested-With, Content-Type, Accept, Authorization";
-    context.Response.Headers["Access-Control-Allow-Methods"] =
-        "GET, POST, PUT, DELETE, OPTIONS";
-
-    if (context.Request.Method == "OPTIONS")
-    {
-        context.Response.StatusCode = StatusCodes.Status200OK;
-        await context.Response.CompleteAsync();
-        return;
-    }
-
-    await next();
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
 });
 
-// =============== PIPELINE ===============
-app.UseSwagger();
-app.UseSwaggerUI();
+// (Opcional) força https em produção
+app.UseHttpsRedirection();
 
-app.UseRouting();
+// ✅ CORS TEM QUE VIR ANTES de Authorization e antes de MapControllers
+app.UseCors("AllowFrontend");
 
-// aplica a policy nomeada (funciona junto com o middleware acima)
-app.UseCors("AllowAirControlWeb");
-
-app.UseAuthentication();
+// Se você tiver autenticação, deixe assim. Se não tiver, não atrapalha.
 app.UseAuthorization();
 
-// Health simples (Render)
-app.MapGet("/healthz", () => Results.Ok("ok"));
-
-// Health testando o banco
-app.MapGet("/health", async (AppDbContext db) =>
+if (app.Environment.IsDevelopment() || app.Environment.EnvironmentName == "Production")
 {
-    try
-    {
-        var ok = await db.Database.CanConnectAsync();
-        return ok ? Results.Ok("DB OK") : Results.Problem("FALHA NO BANCO DE DADOS");
-    }
-    catch (Exception ex)
-    {
-        return Results.Problem("Erro ao conectar no banco: " + ex.Message);
-    }
-});
+    // Se quiser deixar Swagger só em dev, troque para: if (app.Environment.IsDevelopment())
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
-// Controllers da API
 app.MapControllers();
 
 app.Run();
+
