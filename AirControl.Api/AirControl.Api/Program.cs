@@ -4,16 +4,13 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// =============== CORS (liberado para o app do Vercel) ===============
+// =============== CORS (liberado pra geral por enquanto) ===============
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("CorsPmoc", policy =>
+    options.AddPolicy("AllowAll", policy =>
     {
         policy
-            .WithOrigins(
-                "https://aircontrolos-web.vercel.app",   // seu front no Vercel
-                               
-            )
+            .AllowAnyOrigin()
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -31,11 +28,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title = "AirControlOS API",
-        Version = "v1"
-    });
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "AirControlOS API", Version = "v1" });
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -69,9 +62,10 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
     try
     {
-        db.Database.Migrate();
+        db.Database.Migrate(); // cria/atualiza as tabelas no banco da Maxi
         Console.WriteLine("Migrations aplicadas com sucesso.");
     }
     catch (Exception ex)
@@ -80,35 +74,13 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// =============== CORS MIDDLEWARE (garantia extra) ===============
-app.Use(async (context, next) =>
-{
-    // Cabeçalhos CORS sempre presentes
-    context.Response.Headers["Access-Control-Allow-Origin"] = "https://aircontrolos-web.vercel.app";
-    context.Response.Headers["Vary"] = "Origin";
-    context.Response.Headers["Access-Control-Allow-Headers"] =
-        "Origin, X-Requested-With, Content-Type, Accept, Authorization";
-    context.Response.Headers["Access-Control-Allow-Methods"] =
-        "GET, POST, PUT, DELETE, OPTIONS";
-
-    if (context.Request.Method == "OPTIONS")
-    {
-        context.Response.StatusCode = StatusCodes.Status200OK;
-        await context.Response.CompleteAsync();
-        return;
-    }
-
-    await next();
-});
-
 // =============== PIPELINE ===============
 app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseRouting();
 
-// aplica a policy nomeada (funciona junto com o middleware acima)
-app.UseCors("AllowAirControlWeb");
+app.UseCors("AllowAll");
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -131,12 +103,6 @@ app.MapGet("/health", async (AppDbContext db) =>
 });
 
 // Controllers da API
-app.UseCors("CorsPmoc");
-
-app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();
-
-
