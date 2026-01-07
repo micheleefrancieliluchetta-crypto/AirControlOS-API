@@ -16,8 +16,8 @@ namespace AirControl.Api.Controllers
             _context = context;
         }
 
-        // POST api/PmocRegistros
-        [HttpPost]
+        // POST api/PmocRegistros/salvar
+        [HttpPost("salvar")]
         public async Task<IActionResult> Criar([FromBody] CriarPmocRegistroDto dto)
         {
             if (dto == null)
@@ -28,14 +28,14 @@ namespace AirControl.Api.Controllers
 
             var registro = new PmocRegistro
             {
-                AparelhoHdvId      = dto.AparelhoHdvId,
-                Data               = string.IsNullOrWhiteSpace(dto.Data)
+                AparelhoHdvId       = dto.AparelhoHdvId,
+                Data                = string.IsNullOrWhiteSpace(dto.Data)
                                         ? DateTime.UtcNow
                                         : DateTime.Parse(dto.Data),
-                ChecklistJson      = dto.ChecklistJson ?? "[]",
+                ChecklistJson       = dto.ChecklistJson ?? "[]",
                 ObservacoesTecnicas = dto.ObservacoesTecnicas ?? string.Empty,
-                TecnicoNome        = dto.TecnicoNome ?? string.Empty,
-                TecnicoEmail       = dto.TecnicoEmail ?? "pmoc@aircontrolos"
+                TecnicoNome         = dto.TecnicoNome ?? string.Empty,
+                TecnicoEmail        = dto.TecnicoEmail ?? "pmoc@aircontrolos"
             };
 
             _context.PmocRegistros.Add(registro);
@@ -48,12 +48,12 @@ namespace AirControl.Api.Controllers
         [HttpGet("{id:int}")]
         public async Task<ActionResult<PmocRegistro>> ObterPorId(int id)
         {
-          var registro = await _context.PmocRegistros.FindAsync(id);
-          if (registro == null) return NotFound();
-          return registro;
+            var registro = await _context.PmocRegistros.FindAsync(id);
+            if (registro == null) return NotFound();
+            return registro;
         }
 
-        // ajuda em pré-flight OPTIONS (não é obrigatório, mas não atrapalha)
+        // ajuda em pré-flight OPTIONS
         [HttpOptions]
         public IActionResult Options()
         {
@@ -63,11 +63,11 @@ namespace AirControl.Api.Controllers
 
     public class CriarPmocRegistroDto
     {
-        public int AparelhoHdvId { get; set; }
-        public string? Data { get; set; }
-        public string ChecklistJson { get; set; } = "[]";
+        public int    AparelhoHdvId       { get; set; }
+        public string? Data               { get; set; }
+        public string ChecklistJson       { get; set; } = "[]";
         public string? ObservacoesTecnicas { get; set; }
-        public string? TecnicoNome { get; set; }
-        public string? TecnicoEmail { get; set; }
+        public string? TecnicoNome        { get; set; }
+        public string? TecnicoEmail       { get; set; }
     }
 }
