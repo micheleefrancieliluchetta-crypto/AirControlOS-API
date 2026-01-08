@@ -14,3 +14,4 @@ namespace AirControl.Api.Dtos
         public string? ObservacoesTecnicas { get; set; }
     }
 }
+
