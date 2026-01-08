@@ -1,4 +1,4 @@
-﻿FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base 
 WORKDIR /app
 EXPOSE 8080
 
@@ -6,12 +6,11 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 COPY . .
 
-# 👇 AQUI é o que muda (duas pastas AirControl.Api)
-RUN dotnet restore "./AirControl.Api/AirControl.Api/AirControl.Api.csproj"
-RUN dotnet publish "./AirControl.Api/AirControl.Api/AirControl.Api.csproj" -c Release -o /app/publish
+# ✅ Caminho corrigido
+RUN dotnet restore "./AirControl.Api/AirControl.Api.csproj"
+RUN dotnet publish "./AirControl.Api/AirControl.Api.csproj" -c Release -o /app/publish
 
 FROM base AS final
 WORKDIR /app
 COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet", "AirControl.Api.dll"]
-
