@@ -1,18 +1,14 @@
-﻿using System;
-
 namespace AirControl.Api.Dtos
 {
     public class CriarPmocRegistroDto
     {
         public int AparelhoHdvId { get; set; }
-
-        public DateTime Data { get; set; }
-
-        // mesmo nome do front e do modelo
-        public string ChecklistJson { get; set; } = string.Empty;
-
+        public string? Data { get; set; }
+        public string? ChecklistJson { get; set; }
         public string? ObservacoesTecnicas { get; set; }
 
+        // 🔹 ADICIONAR ESSES DOIS:
         public string? TecnicoNome { get; set; }
+        public string? TecnicoEmail { get; set; }
     }
 }
