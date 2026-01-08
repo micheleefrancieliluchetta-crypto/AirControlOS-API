@@ -1,8 +1,12 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using AirControl.Api.Data;
 using AirControl.Api.Models;
+using AirControl.Api.Dtos;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace AirControl.Api.Controllers
 {
@@ -17,17 +21,6 @@ namespace AirControl.Api.Controllers
             _context = context;
         }
 
-        // DTO que a API recebe
-        public class CriarPmocRegistroDto
-        {
-            public int AparelhoHdvId { get; set; }
-            public string? Data { get; set; }                 // "2026-01-07"
-            public string? ChecklistJson { get; set; } = "[]";
-            public string? ObservacoesTecnicas { get; set; }
-            public string? TecnicoNome { get; set; }
-            public string? TecnicoEmail { get; set; }
-        }
-
         // POST /api/PmocRegistros
         [HttpPost]
         public async Task<IActionResult> Criar([FromBody] CriarPmocRegistroDto dto)
@@ -38,29 +31,16 @@ namespace AirControl.Api.Controllers
             if (dto.AparelhoHdvId <= 0)
                 return BadRequest("AparelhoHdvId inválido.");
 
-            // === CONCERTO DO DateTime ===
-            DateTime dataUtc;
-            if (string.IsNullOrWhiteSpace(dto.Data))
-            {
-                dataUtc = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc);
-            }
-            else
-            {
-                if (!DateTime.TryParse(dto.Data, out var dataParsed))
-                    return BadRequest("Data inválida.");
-
-                dataUtc = DateTime.SpecifyKind(dataParsed, DateTimeKind.Utc);
-            }
-            // =============================
-
             var registro = new PmocRegistro
             {
                 AparelhoHdvId       = dto.AparelhoHdvId,
-                Data                = dataUtc,
+                Data                = string.IsNullOrWhiteSpace(dto.Data)
+                                        ? DateTime.UtcNow
+                                        : DateTime.Parse(dto.Data),
                 ChecklistJson       = dto.ChecklistJson ?? "[]",
                 ObservacoesTecnicas = dto.ObservacoesTecnicas ?? string.Empty,
-                TecnicoNome         = dto.TecnicoNome ?? string.Empty,
-                TecnicoEmail        = dto.TecnicoEmail ?? string.Empty
+                TecnicoNome         = dto.TecnicoNome,
+                TecnicoEmail        = dto.TecnicoEmail
             };
 
             _context.PmocRegistros.Add(registro);
@@ -78,12 +58,19 @@ namespace AirControl.Api.Controllers
             return registro;
         }
 
-        // OPTIONS pra ajudar em preflight CORS
-        [HttpOptions]
-        public IActionResult Options()
+        // GET /api/PmocRegistros/por-aparelho/3
+        [HttpGet("por-aparelho/{aparelhoHdvId:int}")]
+        public async Task<ActionResult<IEnumerable<PmocRegistro>>> ObterPorAparelho(int aparelhoHdvId)
         {
-            return Ok();
+            var registros = await _context.PmocRegistros
+                .Where(r => r.AparelhoHdvId == aparelhoHdvId)
+                .OrderByDescending(r => r.Data)
+                .ToListAsync();
+
+            return Ok(registros);
         }
+
+        [HttpOptions]
+        public IActionResult Options() => Ok();
     }
 }
-
