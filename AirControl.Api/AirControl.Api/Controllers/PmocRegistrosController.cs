@@ -67,6 +67,7 @@ namespace AirControl.Api.Controllers
                 .OrderByDescending(r => r.Data)
                 .ToListAsync();
 
+            // mesmo sem registro, devolve 200 com []
             return Ok(registros);
         }
 
