@@ -77,12 +77,16 @@ namespace AirControl.Api.Controllers
             return regs;
         }
 
-        // OPTIONS /api/PmocRegistros  (preflight do navegador)
+        // OPTIONS /api/PmocRegistros  (pré-flight CORS)
         [HttpOptions]
-        public IActionResult Options()
-        {
-            Response.Headers.Add("Allow", "GET,POST,OPTIONS");
-            return Ok();
-        }
-    }
+        public IActionResult Preflight()
+       {
+       // libera geral só pra essa rota
+       Response.Headers["Access-Control-Allow-Origin"] = "*";
+       Response.Headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS";
+       Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization";
+
+       return Ok();
+      }
+   }
 }
