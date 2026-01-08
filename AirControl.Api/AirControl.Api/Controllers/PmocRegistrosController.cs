@@ -59,11 +59,11 @@ namespace AirControl.Api.Controllers
         }
 
         // GET /api/PmocRegistros/por-aparelho/3
-        [HttpGet("por-aparelho/{aparelhoHdvId:int}")]
-        public async Task<ActionResult<IEnumerable<PmocRegistro>>> ObterPorAparelho(int aparelhoHdvId)
+        [HttpGet("por-aparelho/{aparelhoId:int}")]
+        public async Task<ActionResult<IEnumerable<PmocRegistro>>> GetPorAparelho(int aparelhoId)
         {
             var registros = await _context.PmocRegistros
-                .Where(r => r.AparelhoHdvId == aparelhoHdvId)
+                .Where(r => r.AparelhoHdvId == aparelhoId)
                 .OrderByDescending(r => r.Data)
                 .ToListAsync();
 
