@@ -58,7 +58,35 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// =============== MIGRATIONS AUTOMÁTICAS ===============
+// =============== MIDDLEWARE DE CORS GLOBAL (garante headers em todas as respostas) ===============
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
+    context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+    if (context.Request.Method == "OPTIONS")
+    {
+        context.Response.StatusCode = 200;
+        return;
+    }
+
+    await next();
+});
+
+// =============== SWAGGER ===============
+app.UseSwagger();
+app.UseSwaggerUI();
+
+// =============== PIPELINE ===============
+app.UseRouting();
+
+app.UseCors("AllowAll"); // ⚠️ OBRIGATÓRIO antes de Authentication
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+// =============== MIGRAÇÕES AUTOMÁTICAS ===============
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -74,22 +102,9 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// =============== PIPELINE ===============
-app.UseSwagger();
-app.UseSwaggerUI();
-
-app.UseRouting();
-
-// ✅ IMPORTANTE: CORS precisa vir ANTES de Authentication e Authorization
-app.UseCors("AllowAll");
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-// Health simples (Render)
+// =============== HEALTH CHECKS ===============
 app.MapGet("/healthz", () => Results.Ok("ok"));
 
-// Health com teste real de conexão com banco
 app.MapGet("/health", async (AppDbContext db) =>
 {
     try
@@ -103,7 +118,7 @@ app.MapGet("/health", async (AppDbContext db) =>
     }
 });
 
-// Controllers
+// =============== CONTROLLERS ===============
 app.MapControllers();
 
 app.Run();
