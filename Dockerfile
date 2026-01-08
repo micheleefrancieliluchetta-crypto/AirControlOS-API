@@ -6,9 +6,10 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 COPY . .
 
-# ✅ Caminho corrigido
-RUN dotnet restore "./AirControl.Api/AirControl.Api.csproj"
-RUN dotnet publish "./AirControl.Api/AirControl.Api.csproj" -c Release -o /app/publish
+# ✅ Caminho correto baseado na estrutura real
+WORKDIR /src/AirControl.Api
+RUN dotnet restore "AirControl.Api.csproj"
+RUN dotnet publish "AirControl.Api.csproj" -c Release -o /app/publish
 
 FROM base AS final
 WORKDIR /app
