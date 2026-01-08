@@ -4,7 +4,7 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// =============== CORS (liberado geral por enquanto) ===============
+// =============== CORS: Libera para qualquer origem (útil em dev ou testes) ===============
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -58,39 +58,10 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// =============== MIDDLEWARE DE CORS GLOBAL (garante headers em todas as respostas) ===============
-app.Use(async (context, next) =>
-{
-    context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
-    context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Authorization");
-
-    if (context.Request.Method == "OPTIONS")
-    {
-        context.Response.StatusCode = 200;
-        return;
-    }
-
-    await next();
-});
-
-// =============== SWAGGER ===============
-app.UseSwagger();
-app.UseSwaggerUI();
-
-// =============== PIPELINE ===============
-app.UseRouting();
-
-app.UseCors("AllowAll"); // ⚠️ OBRIGATÓRIO antes de Authentication
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-// =============== MIGRAÇÕES AUTOMÁTICAS ===============
+// =============== MIGRAÇÕES ===============
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
     try
     {
         db.Database.Migrate();
@@ -102,9 +73,20 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// =============== HEALTH CHECKS ===============
-app.MapGet("/healthz", () => Results.Ok("ok"));
+// =============== PIPELINE ===============
+app.UseSwagger();
+app.UseSwaggerUI();
 
+// ✅ ATIVA O CORS antes da autenticação
+app.UseCors("AllowAll");
+
+app.UseRouting();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+// =============== HEALTH ===================
+app.MapGet("/healthz", () => Results.Ok("ok"));
 app.MapGet("/health", async (AppDbContext db) =>
 {
     try
@@ -122,3 +104,4 @@ app.MapGet("/health", async (AppDbContext db) =>
 app.MapControllers();
 
 app.Run();
+
