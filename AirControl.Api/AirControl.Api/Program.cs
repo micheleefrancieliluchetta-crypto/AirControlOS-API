@@ -4,7 +4,7 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// =============== CORS (liberado pra geral por enquanto) ===============
+// =============== CORS (liberado geral por enquanto) ===============
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -65,7 +65,7 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
-        db.Database.Migrate(); // cria/atualiza as tabelas no banco da Maxi
+        db.Database.Migrate();
         Console.WriteLine("Migrations aplicadas com sucesso.");
     }
     catch (Exception ex)
@@ -80,6 +80,7 @@ app.UseSwaggerUI();
 
 app.UseRouting();
 
+// ✅ IMPORTANTE: CORS precisa vir ANTES de Authentication e Authorization
 app.UseCors("AllowAll");
 
 app.UseAuthentication();
@@ -88,7 +89,7 @@ app.UseAuthorization();
 // Health simples (Render)
 app.MapGet("/healthz", () => Results.Ok("ok"));
 
-// Health testando o banco
+// Health com teste real de conexão com banco
 app.MapGet("/health", async (AppDbContext db) =>
 {
     try
@@ -102,7 +103,7 @@ app.MapGet("/health", async (AppDbContext db) =>
     }
 });
 
-// Controllers da API
+// Controllers
 app.MapControllers();
 
 app.Run();
