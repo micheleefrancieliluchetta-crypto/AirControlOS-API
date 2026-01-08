@@ -4,7 +4,7 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// =============== CORS: Libera para qualquer origem (útil em dev ou testes) ===============
+// =============== CORS: Libera geral ===============
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -16,14 +16,14 @@ builder.Services.AddCors(options =>
     });
 });
 
-// =============== DB (PostgreSQL) ===============
+// =============== DB CONTEXT ===============
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
     options.UseNpgsql(connStr);
 });
 
-// =============== CONTROLLERS + SWAGGER ===============
+// =============== SWAGGER ===============
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -77,7 +77,7 @@ using (var scope = app.Services.CreateScope())
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// ✅ ATIVA O CORS antes da autenticação
+// ✅ O CORS TEM QUE VIR AQUI, EXATAMENTE ANTES DO ROUTING
 app.UseCors("AllowAll");
 
 app.UseRouting();
@@ -85,7 +85,9 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// =============== HEALTH ===================
+// =============== ROTAS ===============
+app.MapControllers();
+
 app.MapGet("/healthz", () => Results.Ok("ok"));
 app.MapGet("/health", async (AppDbContext db) =>
 {
@@ -100,8 +102,4 @@ app.MapGet("/health", async (AppDbContext db) =>
     }
 });
 
-// =============== CONTROLLERS ===============
-app.MapControllers();
-
 app.Run();
-
