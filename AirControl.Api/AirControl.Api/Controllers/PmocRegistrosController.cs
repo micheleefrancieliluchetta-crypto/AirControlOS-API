@@ -4,16 +4,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using AirControl.Api.Data;
 using AirControl.Api.Dtos;
-using AirControl.Api.Models;    // onde está a entidade PmocRegistro
-using Microsoft.AspNetCore.Cors;
+using AirControl.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace AirControl.Api.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]             // /api/PmocRegistros
-    [EnableCors("AllowAll")]                // garante CORS nesse controller
+    [Route("api/[controller]")]   // /api/PmocRegistros
     public class PmocRegistrosController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -33,12 +31,16 @@ namespace AirControl.Api.Controllers
             if (dto.AparelhoHdvId <= 0)
                 return BadRequest("AparelhoHdvId inválido.");
 
-            // Data: se vier vazia, usa agora (UTC)
+            // Data: se vier vazia, usa agora (UTC); senão tenta parsear
             DateTime data;
             if (string.IsNullOrWhiteSpace(dto.Data))
+            {
                 data = DateTime.UtcNow;
+            }
             else if (!DateTime.TryParse(dto.Data, out data))
+            {
                 return BadRequest("Data em formato inválido.");
+            }
 
             var registro = new PmocRegistro
             {
@@ -76,6 +78,8 @@ namespace AirControl.Api.Controllers
 
             return regs;
         }
+    }
+}
 
         // OPTIONS /api/PmocRegistros  (pré-flight CORS)
         [HttpOptions]
