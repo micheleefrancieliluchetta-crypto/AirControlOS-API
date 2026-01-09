@@ -4,7 +4,7 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// =============== CORS: Libera geral ===============
+// =============== CORS (liberado geral por enquanto) ===============
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -16,14 +16,14 @@ builder.Services.AddCors(options =>
     });
 });
 
-// =============== DB CONTEXT ===============
+// =============== DB (PostgreSQL) ===============
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
     options.UseNpgsql(connStr);
 });
 
-// =============== SWAGGER ===============
+// =============== CONTROLLERS + SWAGGER ===============
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -58,10 +58,11 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// =============== MIGRAÇÕES ===============
+// =============== MIGRATIONS AUTOMÁTICAS ===============
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
     try
     {
         db.Database.Migrate();
@@ -74,10 +75,11 @@ using (var scope = app.Services.CreateScope())
 }
 
 // =============== PIPELINE ===============
+
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// ✅ O CORS TEM QUE VIR AQUI, EXATAMENTE ANTES DO ROUTING
+// ✅ IMPORTANTE: UseCors deve vir ANTES de Routing, Auth e Controllers
 app.UseCors("AllowAll");
 
 app.UseRouting();
@@ -103,3 +105,4 @@ app.MapGet("/health", async (AppDbContext db) =>
 });
 
 app.Run();
+
