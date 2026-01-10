@@ -58,6 +58,12 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+// =============== ERROS DE DEV ===============
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+
 // =============== MIGRATIONS AUTOMÁTICAS ===============
 using (var scope = app.Services.CreateScope())
 {
@@ -75,12 +81,6 @@ using (var scope = app.Services.CreateScope())
 }
 
 // =============== PIPELINE ===============
-
-// ✅ Mostra página de erro detalhado em ambiente de desenvolvimento
-if (app.Environment.IsDevelopment())
-{
-    app.UseDeveloperExceptionPage();
-}
 
 app.UseSwagger();
 app.UseSwaggerUI();
