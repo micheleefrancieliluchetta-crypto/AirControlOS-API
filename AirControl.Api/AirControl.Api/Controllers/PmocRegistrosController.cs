@@ -37,7 +37,7 @@ namespace AirControl.Api.Controllers
                 {
                     data = DateTime.UtcNow;
                 }
-                else if (!DateTime.TryParse(dto.Data, System.Globalization.CultureInfo.GetCultureInfo("pt-BR"), System.Globalization.DateTimeStyles.None, out data))
+                else if (!DateTime.TryParse(dto.Data, System.Globalization.CultureInfo.GetCultureInfo("pt-BR"), DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out data))
                 {
                     return BadRequest("Data em formato inválido. Use dd/MM/yyyy");
                 }
