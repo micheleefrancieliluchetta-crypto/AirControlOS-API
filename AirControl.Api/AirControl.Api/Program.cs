@@ -76,6 +76,12 @@ using (var scope = app.Services.CreateScope())
 
 // =============== PIPELINE ===============
 
+// ✅ Mostra página de erro detalhado em ambiente de desenvolvimento
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+
 app.UseSwagger();
 app.UseSwaggerUI();
 
@@ -105,4 +111,3 @@ app.MapGet("/health", async (AppDbContext db) =>
 });
 
 app.Run();
-
