@@ -59,8 +59,8 @@ namespace AirControl.Api.Controllers
        }
         catch (Exception ex)
        {
-        return StatusCode(500, "Erro interno: " + ex.Message);
-     }
+        return StatusCode(500, "Erro interno: " + ex.Message - {ex.InnerException?.Message}");
+       }
 }
 
         // GET /api/PmocRegistros/{id}
