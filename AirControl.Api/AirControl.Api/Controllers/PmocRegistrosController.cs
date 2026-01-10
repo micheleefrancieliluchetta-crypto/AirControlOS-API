@@ -35,7 +35,7 @@ namespace AirControl.Api.Controllers
                 DateTime data;
                 if (string.IsNullOrWhiteSpace(dto.Data))
                 {
-                    data = DateTime.UtcNow;
+                    data = DateTime.UtcNow; // Usa o horário local do servidor (idealmente configurado com o fuso do Brasil)
                 }
                 else if (!DateTime.TryParse(dto.Data, System.Globalization.CultureInfo.GetCultureInfo("pt-BR"), System.Globalization.DateTimeStyles.None, out data))
                 {
