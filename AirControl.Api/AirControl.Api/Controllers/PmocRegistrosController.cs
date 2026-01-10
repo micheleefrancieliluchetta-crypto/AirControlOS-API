@@ -32,18 +32,16 @@ namespace AirControl.Api.Controllers
                 if (dto.AparelhoHdvId <= 0)
                     return BadRequest("AparelhoHdvId inválido.");
 
+                // Processamento da data
                 DateTime data;
                 if (string.IsNullOrWhiteSpace(dto.Data))
                 {
-                    data = DateTime.UtcNow; // Usa o horário local do servidor (idealmente configurado com o fuso do Brasil)
+                    // Usa hora local do servidor (sem timezone)
+                    data = DateTime.Now;
                 }
                 else if (!DateTime.TryParse(dto.Data, System.Globalization.CultureInfo.GetCultureInfo("pt-BR"), System.Globalization.DateTimeStyles.None, out data))
                 {
-                     return BadRequest("Data em formato inválido. Use dd/MM/yyyy");
-                }
-                else
-                {
-                     data = DateTime.SpecifyKind(data, DateTimeKind.Utc);
+                    return BadRequest("Data em formato inválido. Use dd/MM/yyyy");
                 }
 
                 var registro = new PmocRegistro
@@ -99,3 +97,4 @@ namespace AirControl.Api.Controllers
         }
     }
 }
+
