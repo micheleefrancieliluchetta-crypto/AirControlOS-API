@@ -34,17 +34,19 @@ namespace AirControl.Api.Controllers
 
                 DateTime data;
                 if (string.IsNullOrWhiteSpace(dto.Data))
-                {
-                    data = DateTime.UtcNow; // Usa o horário local do servidor (idealmente configurado com o fuso do Brasil)
-                }
-                else if (!DateTime.TryParse(dto.Data, System.Globalization.CultureInfo.GetCultureInfo("pt-BR"), System.Globalization.DateTimeStyles.None, out data))
-                {
-                     return BadRequest("Data em formato inválido. Use dd/MM/yyyy");
-                }
-                else
-                {
-                     data = DateTime.SpecifyKind(data, DateTimeKind.Utc);
-                }
+               {
+            // Define a hora local de Brasília corretamente
+            var brasiliaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time");
+               data = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, brasiliaTimeZone);
+               }
+           else if (!DateTime.TryParse(dto.Data, System.Globalization.CultureInfo.GetCultureInfo("pt-BR"), System.Globalization.DateTimeStyles.None, out data))
+           {
+                return BadRequest("Data em formato inválido. Use dd/MM/yyyy HH:mm:ss");
+           }
+           else
+           {
+                data = DateTime.SpecifyKind(data, DateTimeKind.Utc);
+           }
 
                 var registro = new PmocRegistro
                 {
