@@ -36,17 +36,12 @@ namespace AirControl.Api.Controllers
                DateTime data;
                if (string.IsNullOrWhiteSpace(dto.Data))
                {
-                    var brasiliaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time");
-                    data = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, brasiliaTimeZone);
+                     data = DateTime.UtcNow; // já está em UTC, perfeito para o PostgreSQL
                }
-                    else if (!DateTime.TryParse(dto.Data, CultureInfo.GetCultureInfo("pt-BR"), DateTimeStyles.None, out data))
+                     else if (!DateTime.TryParse(dto.Data, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out data))
                {
-                    return BadRequest("Data em formato inválido. Use dd/MM/yyyy HH:mm:ss");
+                     return BadRequest("Data em formato inválido. Envie no formato ISO 8601 (ex: 2026-01-12T12:30:00Z).");
                }
-                    else
-               {
-                      data = DateTime.SpecifyKind(data, DateTimeKind.Utc);
-              }
 
                 var registro = new PmocRegistro
                 {
