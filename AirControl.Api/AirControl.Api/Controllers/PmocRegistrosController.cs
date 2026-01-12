@@ -43,9 +43,9 @@ namespace AirControl.Api.Controllers
            {
                 return BadRequest("Data em formato inválido. Use dd/MM/yyyy HH:mm:ss");
            }
-           else
+          else
            {
-                data = DateTime.SpecifyKind(data, DateTimeKind.Utc);
+                data = DateTime.Parse(dto.Data, null, DateTimeStyles.RoundtripKind);
            }
 
                 var registro = new PmocRegistro
