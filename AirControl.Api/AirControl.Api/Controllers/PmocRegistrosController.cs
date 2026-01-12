@@ -33,21 +33,20 @@ namespace AirControl.Api.Controllers
                 if (dto.AparelhoHdvId <= 0)
                     return BadRequest("AparelhoHdvId inválido.");
 
-                DateTime data;
-                if (string.IsNullOrWhiteSpace(dto.Data))
+               DateTime data;
+               if (string.IsNullOrWhiteSpace(dto.Data))
                {
-            // Define a hora local de Brasília corretamente
-            var brasiliaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time");
-               data = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, brasiliaTimeZone);
+                    var brasiliaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time");
+                    data = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, brasiliaTimeZone);
                }
-           else if (!DateTime.TryParse(dto.Data, System.Globalization.CultureInfo.GetCultureInfo("pt-BR"), System.Globalization.DateTimeStyles.None, out data))
-           {
-                return BadRequest("Data em formato inválido. Use dd/MM/yyyy HH:mm:ss");
-           }
-          else
-           {
-                data = DateTime.Parse(dto.Data, null, DateTimeStyles.RoundtripKind);
-           }
+                    else if (!DateTime.TryParse(dto.Data, CultureInfo.GetCultureInfo("pt-BR"), DateTimeStyles.None, out data))
+               {
+                    return BadRequest("Data em formato inválido. Use dd/MM/yyyy HH:mm:ss");
+               }
+                    else
+               {
+                      data = DateTime.SpecifyKind(data, DateTimeKind.Utc);
+              }
 
                 var registro = new PmocRegistro
                 {
