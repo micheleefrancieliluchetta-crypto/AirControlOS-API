@@ -23,11 +23,11 @@ namespace AirControl.Api.Controllers
         }
 
            // POST /api/PmocRegistros
-           [HttpPost]
-           public async Task<IActionResult> Criar([FromBody] CriarPmocRegistroDto dto)
-        {
-            try
-        {
+          [HttpPost]
+public async Task<IActionResult> Criar([FromBody] CriarPmocRegistroDto dto)
+{
+    try
+    {
         if (dto == null)
             return BadRequest("Dados do PMOC não enviados.");
 
