@@ -34,10 +34,15 @@ namespace AirControl.Api.Controllers
 
             // Data: se vier vazia, usa agora (UTC)
               DateTime data;
-             if (string.IsNullOrWhiteSpace(dto.Data)) &&
-             data = DateTime.UtcNow;
-                  else if (!DateTime.TryParse(dto.Data, out data))
-                  return BadRequest("Data em formato inválido.");
+
+              if (string.IsNullOrWhiteSpace(dto.Data))
+              {
+                    data = DateTime.UtcNow;
+              }
+                    else if (!DateTime.TryParse(dto.Data, null, System.Globalization.DateTimeStyles.AdjustToUniversal, out data))
+              {
+                    return BadRequest("Data inválida. Envie no formato ISO 8601.");
+              }
 
              var registro = new PmocRegistro
            {
