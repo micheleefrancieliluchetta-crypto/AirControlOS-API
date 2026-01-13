@@ -22,42 +22,41 @@ namespace AirControl.Api.Controllers
             _context = context;
         }
 
+        // POST /api/PmocRegistros
         [HttpPost]
         public async Task<IActionResult> Criar([FromBody] CriarPmocRegistroDto dto)
         {
-            try
-            {
-                if (dto == null)
-                    return BadRequest("Dados do PMOC não enviados.");
+           if (dto == null)
+           return BadRequest("Dados do PMOC não enviados.");
 
-                if (dto.AparelhoHdvId <= 0)
-                    return BadRequest("AparelhoHdvId inválido.");
+           if (dto.AparelhoHdvId <= 0)
+           return BadRequest("AparelhoHdvId inválido.");
 
-               DateTime data;
-               if (string.IsNullOrWhiteSpace(dto.Data))
-               {
-                     data = DateTime.UtcNow; // já está em UTC, perfeito para o PostgreSQL
-               }
-                     else if (!DateTime.TryParse(dto.Data, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out data))
-               {
-                     return BadRequest("Data em formato inválido. Envie no formato ISO 8601 (ex: 2026-01-12T12:30:00Z).");
-               }
+        // ==============================
+        //  DATA/HORA: sempre agora
+        // ==============================
+        // Se quiser usar UTC:
+        // var data = DateTime.UtcNow;
 
-                var registro = new PmocRegistro
-                {
-                    AparelhoHdvId = dto.AparelhoHdvId,
-                    Data = data,
-                    ChecklistJson = dto.ChecklistJson ?? "[]",
-                    ObservacoesTecnicas = dto.ObservacoesTecnicas ?? string.Empty,
-                    TecnicoNome = dto.TecnicoNome,
-                    TecnicoEmail = dto.TecnicoEmail
-                };
+       // Como você está no Brasil, provavelmente é melhor usar hora local:
+       var data = DateTime.Now;
 
-                _context.PmocRegistros.Add(registro);
-                await _context.SaveChangesAsync();
+       var registro = new PmocRegistro
+       {
+            AparelhoHdvId       = dto.AparelhoHdvId,
+            Data                = data,                         // <-- aqui usamos a data acima
+            ChecklistJson       = dto.ChecklistJson ?? "[]",
+            ObservacoesTecnicas = dto.ObservacoesTecnicas ?? string.Empty,
+            TecnicoNome         = dto.TecnicoNome,
+            TecnicoEmail        = dto.TecnicoEmail
+       };
 
-                return CreatedAtAction(nameof(ObterPorId), new { id = registro.Id }, registro);
-            }
+       _context.PmocRegistros.Add(registro);
+        await _context.SaveChangesAsync();
+
+               return CreatedAtAction(nameof(ObterPorId), new { id = registro.Id }, registro);
+         }
+
             catch (Exception ex)
             {
                 return StatusCode(500, $"Erro interno: {ex.Message} - {ex.InnerException?.Message}");
