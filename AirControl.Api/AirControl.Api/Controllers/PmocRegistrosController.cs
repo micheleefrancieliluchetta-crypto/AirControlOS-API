@@ -25,46 +25,47 @@ namespace AirControl.Api.Controllers
            // POST /api/PmocRegistros
            [HttpPost]
            public async Task<IActionResult> Criar([FromBody] CriarPmocRegistroDto dto)
-           {
-                if (dto == null)
-                return BadRequest("Dados do PMOC não enviados.");
+        {
+            try
+        {
+        if (dto == null)
+            return BadRequest("Dados do PMOC não enviados.");
 
-                if (dto.AparelhoHdvId <= 0)
-                return BadRequest("AparelhoHdvId inválido.");
+        if (dto.AparelhoHdvId <= 0)
+            return BadRequest("AparelhoHdvId inválido.");
 
-            // Data: se vier vazia, usa agora (UTC)
-              DateTime data;
+        // Data: se vier vazia, usa agora (UTC)
+        DateTime data;
 
-              if (string.IsNullOrWhiteSpace(dto.Data))
-              {
-                    data = DateTime.UtcNow;
-              }
-                    else if (!DateTime.TryParse(dto.Data, null, System.Globalization.DateTimeStyles.AdjustToUniversal, out data))
-              {
-                    return BadRequest("Data inválida. Envie no formato ISO 8601.");
-              }
-
-             var registro = new PmocRegistro
-           {
-                  AparelhoHdvId       = dto.AparelhoHdvId,
-                  Data                = data,
-                  ChecklistJson       = dto.ChecklistJson ?? "[]",
-                  ObservacoesTecnicas = dto.ObservacoesTecnicas ?? string.Empty,
-                  TecnicoNome         = dto.TecnicoNome,
-                  TecnicoEmail        = dto.TecnicoEmail
-            };
-
-           _context.PmocRegistros.Add(registro);
-            await _context.SaveChangesAsync();
-
-           return CreatedAtAction(nameof(ObterPorId), new { id = registro.Id }, registro);
-           }
-
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Erro interno: {ex.Message} - {ex.InnerException?.Message}");
-            }
+        if (string.IsNullOrWhiteSpace(dto.Data))
+        {
+            data = DateTime.UtcNow;
         }
+        else if (!DateTime.TryParse(dto.Data, null, DateTimeStyles.AdjustToUniversal, out data))
+        {
+            return BadRequest("Data inválida. Envie no formato ISO 8601.");
+        }
+
+        var registro = new PmocRegistro
+        {
+            AparelhoHdvId       = dto.AparelhoHdvId,
+            Data                = data,
+            ChecklistJson       = dto.ChecklistJson ?? "[]",
+            ObservacoesTecnicas = dto.ObservacoesTecnicas ?? string.Empty,
+            TecnicoNome         = dto.TecnicoNome,
+            TecnicoEmail        = dto.TecnicoEmail
+        };
+
+        _context.PmocRegistros.Add(registro);
+        await _context.SaveChangesAsync();
+
+        return CreatedAtAction(nameof(ObterPorId), new { id = registro.Id }, registro);
+    }
+    catch (Exception ex)
+    {
+        return StatusCode(500, $"Erro interno: {ex.Message} - {ex.InnerException?.Message}");
+    }
+}
 
         // GET /api/PmocRegistros/{id}
         [HttpGet("{id:int}")]
