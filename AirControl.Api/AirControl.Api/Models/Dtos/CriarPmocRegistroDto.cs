@@ -1,9 +1,12 @@
-public class CriarPmocRegistroDto
+namespace AirControl.Api.Dtos
 {
-    public int AparelhoHdvId { get; set; }
-    public string Data { get; set; }  // <- deve ser string
-    public string ChecklistJson { get; set; }
-    public string ObservacoesTecnicas { get; set; }
-    public string TecnicoNome { get; set; }
-    public string TecnicoEmail { get; set; }
+    public class CriarPmocRegistroDto
+    {
+        public int AparelhoHdvId { get; set; }
+        public string Data { get; set; }  // string ISO 8601
+        public string ChecklistJson { get; set; }
+        public string ObservacoesTecnicas { get; set; }
+        public string TecnicoNome { get; set; }
+        public string TecnicoEmail { get; set; }
+    }
 }
