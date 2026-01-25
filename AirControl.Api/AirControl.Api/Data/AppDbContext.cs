@@ -16,7 +16,7 @@ namespace AirControl.Api.Data
         public DbSet<PmocRegistro> PmocRegistros => Set<PmocRegistro>();
         public DbSet<PmocPlano> PmocPlanos => Set<PmocPlano>();
         public DbSet<Unidade> Unidade => Set<Unidade>();
-
+        public DbSet<SolicitacaoPeca> SolicitacoesPeca => Set<SolicitacaoPeca>();
 
         // NOVO: tabela de empresas
         public DbSet<Empresa> Empresas => Set<Empresa>();
@@ -140,6 +140,30 @@ namespace AirControl.Api.Data
                     .HasForeignKey(p => p.OrdemServicoId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
+
+            // ==========================
+            // SOLICITAÇÃO DE PEÇA
+          // ==========================
+          mb.Entity<SolicitacaoPeca>(e =>
+          {
+           e.ToTable("SolicitacoesPeca");
+
+           e.HasKey(p => p.Id);
+
+           e.Property(p => p.NomePeca)
+           .IsRequired()
+           .HasMaxLength(200);
+
+           e.Property(p => p.Status)
+          .IsRequired()
+          .HasMaxLength(50)
+          .HasDefaultValue("Pendente");
+
+          e.HasOne(p => p.OrdemServico)
+          .WithMany() // sem mexer em OrdemServico agora
+          .HasForeignKey(p => p.OrdemServicoId)
+          .OnDelete(DeleteBehavior.Cascade);
+        });
         }
     }
 }
