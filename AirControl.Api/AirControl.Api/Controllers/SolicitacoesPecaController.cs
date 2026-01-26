@@ -67,21 +67,29 @@ namespace AirControl.Api.Controllers
             if (!string.IsNullOrWhiteSpace(status))
                 query = query.Where(p => p.Status == status);
 
-            var lista = await query
-                .OrderByDescending(p => p.DataCriacao)
-                .Select(p => new
-                {
-                    p.Id,
-                    p.NomePeca,
-                    p.Quantidade,
-                    p.Status,
-                    p.Cliente,
-                    p.Unidade,
-                    Tecnico = p.TecnicoNome,
-                    NumeroOS = p.OrdemServico != null ? p.OrdemServico.Id : 0,   // ajusta se tiver outro campo
-                    DataOS = p.OrdemServico != null ? p.OrdemServico.DataAbertura : (DateTime?)null
-                })
-                .ToListAsync();
+           var lista = await query
+           .OrderByDescending(p => p.DataCriacao)
+           .Select(p => new
+           {
+           p.Id,
+           p.NomePeca,
+           p.Quantidade,
+           p.Status,
+           p.Cliente,
+           p.Unidade,
+           p.TecnicoNome,
+           p.Observacao,
+
+           // usa o Id da OS como “número” da OS
+           NumeroOS = p.OrdemServico != null ? p.OrdemServico.Id : 0,
+
+           // aqui escolha o campo que EXISTE na OrdemServico:
+           // DataAbertura, DataCriacao, etc.
+           DataOS = p.OrdemServico != null 
+                 ? p.OrdemServico.DataAbertura   // ou DataCriacao, se for esse o nome
+                 : (DateTime?)null
+           })
+           .ToListAsync();
 
             return Ok(lista);
         }
@@ -136,3 +144,4 @@ namespace AirControl.Api.Controllers
         }
     }
 }
+
