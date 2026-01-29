@@ -14,3 +14,7 @@ obj/
 
 # Outros
 /SQLQuery*.sql
+
+# não versionar configs locais
+AirControl.Api/appsettings.json
+AirControl.Api/appsettings.Development.json
