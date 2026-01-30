@@ -147,9 +147,9 @@ public class OrdensServicoController : ControllerBase
     // =========================================================
     [HttpOptions("publico")]
     [AllowAnonymous]
+    [ApiExplorerSettings(IgnoreApi = true)]
     public IActionResult OptionsPublic()
     {
-        AddCorsHeaders();
         return Ok();
     }
 
