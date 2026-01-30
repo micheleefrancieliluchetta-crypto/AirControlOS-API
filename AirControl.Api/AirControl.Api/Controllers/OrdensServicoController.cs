@@ -146,7 +146,6 @@ public class OrdensServicoController : ControllerBase
     //  PRE-FLIGHT (OPTIONS) PÚBLICO -> OPTIONS /api/OrdensServico/publico
     // =========================================================
     [HttpOptions("publico")]
-    [AllowAnonymous]
     [ApiExplorerSettings(IgnoreApi = true)]
     public IActionResult OptionsPublic()
     {
