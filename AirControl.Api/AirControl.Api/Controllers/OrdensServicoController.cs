@@ -145,14 +145,14 @@ public class OrdensServicoController : ControllerBase
     // =========================================================
     // OPTIONS /api/OrdensServico (pré-flight CORS)
     // =========================================================
-    [HttpOptions]
     [ApiExplorerSettings(IgnoreApi = true)]
+    [HttpOptions]
     public IActionResult OptionsPublic()
     {
-           Response.Headers["Access-Control-Allow-Origin"] = "*";
-           Response.Headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,DELETE,OPTIONS";
-           Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization";
-           return Ok();
+        Response.Headers["Access-Control-Allow-Origin"] = "*";
+        Response.Headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,DELETE,OPTIONS";
+        Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization";
+        return Ok();
     }
 
     // =========================================================
