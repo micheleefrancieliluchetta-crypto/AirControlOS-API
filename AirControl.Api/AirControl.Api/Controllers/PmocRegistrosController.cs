@@ -89,14 +89,14 @@ public async Task<IActionResult> Criar([FromBody] CriarPmocRegistroDto dto)
         }
 
          // OPTIONS /api/PmocRegistros (pré-flight CORS)
-         [HttpOptions]
          [ApiExplorerSettings(IgnoreApi = true)]
+         [HttpOptions]
          public IActionResult Preflight()
            {
-                 Response.Headers["Access-Control-Allow-Origin"] = "*";
-                 Response.Headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS";
-                 Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization";
-                 return Ok();
+               Response.Headers["Access-Control-Allow-Origin"] = "*";
+               Response.Headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS";
+               Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization";
+               return Ok();
            }
-      }
+     }
 }
