@@ -1,6 +1,7 @@
 using AirControl.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using System.Linq;
 
 var builder = WebApplication.CreateBuilder(args);
 
