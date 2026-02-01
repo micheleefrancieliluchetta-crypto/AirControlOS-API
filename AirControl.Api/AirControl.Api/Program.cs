@@ -27,11 +27,11 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // =============== CONTROLLERS + SWAGGER ===============
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
+builder.Services.AddSwaggerGen(options =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "AirControlOS API", Version = "v1" });
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "AirControlOS API", Version = "v1" });
 
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
         Type = SecuritySchemeType.Http,
@@ -41,7 +41,7 @@ builder.Services.AddSwaggerGen(c =>
         Description = "Digite: Bearer {seu_token}"
     });
 
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
             new OpenApiSecurityScheme
@@ -52,9 +52,12 @@ builder.Services.AddSwaggerGen(c =>
                     Id = "Bearer"
                 }
             },
-            new string[] {}
+            Array.Empty<string>()
         }
     });
+
+    // 👇 ISSO É O QUE FAZ O SWAGGER NÃO ESTOURAR QUANDO ACHA CONFLITOS
+    options.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
 });
 
 var app = builder.Build();
