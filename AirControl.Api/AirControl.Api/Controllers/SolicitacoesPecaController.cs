@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using AirControl.Api.Data;
 using AirControl.Api.Models;
 using AirControl.Api.Models.Dtos;
@@ -67,29 +68,29 @@ namespace AirControl.Api.Controllers
             if (!string.IsNullOrWhiteSpace(status))
                 query = query.Where(p => p.Status == status);
 
-           var lista = await query
-           .OrderByDescending(p => p.DataCriacao)
-           .Select(p => new
-           {
-           p.Id,
-           p.NomePeca,
-           p.Quantidade,
-           p.Status,
-           p.Cliente,
-           p.Unidade,
-           p.TecnicoNome,
-           p.Observacao,
+            var lista = await query
+                .OrderByDescending(p => p.DataCriacao)
+                .Select(p => new
+                {
+                    p.Id,
+                    p.NomePeca,
+                    p.Quantidade,
+                    p.Status,
+                    p.Cliente,
+                    p.Unidade,
+                    p.TecnicoNome,
+                    p.Observacao,
 
-           // usa o Id da OS como “número” da OS
-           NumeroOS = p.OrdemServico != null ? p.OrdemServico.Id : 0,
+                    // usa o Id da OS como “número” da OS
+                    NumeroOS = p.OrdemServico != null ? p.OrdemServico.Id : 0,
 
-           // aqui escolha o campo que EXISTE na OrdemServico:
-           // DataAbertura, DataCriacao, etc.
-           DataOS = p.OrdemServico != null 
-                 ? p.OrdemServico.DataAbertura   // ou DataCriacao, se for esse o nome
-                 : (DateTime?)null
-           })
-           .ToListAsync();
+                    // aqui escolha o campo que EXISTE na OrdemServico:
+                    // DataAbertura, DataCriacao, etc.
+                    DataOS = p.OrdemServico != null
+                        ? p.OrdemServico.DataAbertura // ou DataCriacao, se for esse o nome
+                        : (DateTime?)null
+                })
+                .ToListAsync();
 
             return Ok(lista);
         }
@@ -98,6 +99,9 @@ namespace AirControl.Api.Controllers
         [HttpPut("{id:int}/status")]
         public async Task<IActionResult> AtualizarStatus(int id, [FromBody] AtualizarStatusSolicitacaoPecaDto dto)
         {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Status))
+                return BadRequest("Status é obrigatório.");
+
             var item = await _context.SolicitacoesPeca.FindAsync(id);
             if (item == null) return NotFound();
 
@@ -109,11 +113,12 @@ namespace AirControl.Api.Controllers
         }
 
         // ------------- MÉTODO AUXILIAR PARA SINCRONIZAR COM A OS -------------
-
-        // você chama isso na ação que salva a OS (Criar/Atualizar)
+        // Esse método NÃO é endpoint. Ele é um helper interno.
+        // O [NonAction] impede o Swagger/ASP.NET de tentar mapear rota nele.
+        [NonAction]
         public async Task AtualizarSolicitacoesPecaAsync(
             int ordemServicoId,
-            System.Collections.Generic.List<PecaDto> pecas,
+            List<PecaDto> pecas,
             string? cliente,
             string? unidade,
             string? tecnicoNome)
@@ -129,7 +134,7 @@ namespace AirControl.Api.Controllers
                 {
                     OrdemServicoId = ordemServicoId,
                     NomePeca = peca.Nome,
-                    Quantidade = peca.Quantidade,
+                    Quantidade = peca.Quantidade <= 0 ? 1 : peca.Quantidade,
                     Cliente = cliente,
                     Unidade = unidade,
                     TecnicoNome = tecnicoNome,
@@ -144,4 +149,3 @@ namespace AirControl.Api.Controllers
         }
     }
 }
-
