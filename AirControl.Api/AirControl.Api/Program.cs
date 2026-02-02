@@ -1,37 +1,50 @@
 using AirControl.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
-using System.Linq;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// =============== CORS (liberado geral por enquanto) ===============
+// ===================== CORS =====================
+// Libera somente o frontend do Vercel
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
         policy
-            .AllowAnyOrigin()
+            .WithOrigins("https://sistemasmaxi.vercel.app")
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
 });
 
-// =============== DB (PostgreSQL) ===============
+// ===================== DB (PostgreSQL) =====================
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
     options.UseNpgsql(connStr);
 });
 
-// =============== CONTROLLERS + SWAGGER ===============
-builder.Services.AddControllers();
+// ===================== CONTROLLERS =====================
+builder.Services.AddControllers()
+    .AddJsonOptions(o =>
+    {
+        // evita problemas com referência circular (EF)
+        o.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+    });
+
 builder.Services.AddEndpointsApiExplorer();
+
+// ===================== SWAGGER =====================
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new OpenApiInfo { Title = "AirControlOS API", Version = "v1" });
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Maxi API",
+        Version = "v1"
+    });
 
+    // JWT Bearer no Swagger
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -57,19 +70,22 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 
-    // 👇 ISSO É O QUE FAZ O SWAGGER NÃO ESTOURAR QUANDO ACHA CONFLITOS
+    // evita estouro se houver conflito de endpoints
     options.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
+
+    // evita conflito de schemas quando existem classes com mesmo nome em namespaces diferentes
+    options.CustomSchemaIds(t => t.FullName);
 });
 
 var app = builder.Build();
 
-// =============== ERROS DE DEV ===============
+// ===================== ERROS DE DEV =====================
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
 }
 
-// =============== MIGRATIONS AUTOMÁTICAS ===============
+// ===================== MIGRATIONS AUTOMÁTICAS =====================
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -85,22 +101,26 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// =============== PIPELINE ===============
-
+// ===================== PIPELINE (ORDEM CERTA) =====================
 app.UseSwagger();
 app.UseSwaggerUI();
 
+// 1) Routing
 app.UseRouting();
 
-// CORS TEM QUE VIR AQUI (entre Routing e Auth)
+// 2) CORS (TEM QUE SER AQUI, antes do auth e do MapControllers)
 app.UseCors("AllowAll");
 
+// 3) Auth
 app.UseAuthentication();
 app.UseAuthorization();
 
+// 4) Controllers
 app.MapControllers();
 
+// ===================== HEALTH =====================
 app.MapGet("/healthz", () => Results.Ok("ok"));
+
 app.MapGet("/health", async (AppDbContext db) =>
 {
     try
@@ -115,3 +135,4 @@ app.MapGet("/health", async (AppDbContext db) =>
 });
 
 app.Run();
+
