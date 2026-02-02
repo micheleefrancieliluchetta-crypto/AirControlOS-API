@@ -90,15 +90,14 @@ using (var scope = app.Services.CreateScope())
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// ✅ IMPORTANTE: UseCors deve vir ANTES de Routing, Auth e Controllers
-app.UseCors("AllowAll");
-
 app.UseRouting();
+
+// CORS TEM QUE VIR AQUI (entre Routing e Auth)
+app.UseCors("AllowAll");
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-// =============== ROTAS ===============
 app.MapControllers();
 
 app.MapGet("/healthz", () => Results.Ok("ok"));
