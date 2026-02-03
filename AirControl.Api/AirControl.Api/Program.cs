@@ -116,7 +116,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 // 4) Controllers
-app.MapControllers();
+app.MapControllers().RequireCors("AllowAll");
 
 // ===================== HEALTH =====================
 app.MapGet("/healthz", () => Results.Ok("ok"));
