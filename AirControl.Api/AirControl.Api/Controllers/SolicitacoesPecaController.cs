@@ -81,13 +81,10 @@ namespace AirControl.Api.Controllers
                     p.TecnicoNome,
                     p.Observacao,
 
-                    // usa o Id da OS como “número” da OS
                     NumeroOS = p.OrdemServico != null ? p.OrdemServico.Id : 0,
 
-                    // aqui escolha o campo que EXISTE na OrdemServico:
-                    // DataAbertura, DataCriacao, etc.
                     DataOS = p.OrdemServico != null
-                        ? p.OrdemServico.DataAbertura // ou DataCriacao, se for esse o nome
+                        ? p.OrdemServico.DataAbertura
                         : (DateTime?)null
                 })
                 .ToListAsync();
@@ -112,9 +109,7 @@ namespace AirControl.Api.Controllers
             return NoContent();
         }
 
-        // ------------- MÉTODO AUXILIAR PARA SINCRONIZAR COM A OS -------------
-        // Esse método NÃO é endpoint. Ele é um helper interno.
-        // O [NonAction] impede o Swagger/ASP.NET de tentar mapear rota nele.
+        // ✅ método auxiliar (não é endpoint)
         [NonAction]
         public async Task AtualizarSolicitacoesPecaAsync(
             int ordemServicoId,
