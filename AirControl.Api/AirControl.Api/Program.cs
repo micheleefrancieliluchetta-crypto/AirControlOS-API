@@ -15,6 +15,7 @@ builder.Services.AddCors(options =>
             .WithOrigins("https://sistemasmaxi.vercel.app")
             .AllowAnyHeader()
             .AllowAnyMethod();
+        // Se você NÃO usa cookies, NÃO use AllowCredentials()
     });
 });
 
@@ -29,7 +30,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddControllers()
     .AddJsonOptions(o =>
     {
-        // evita problemas com referência circular (EF)
         o.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
     });
 
@@ -44,7 +44,6 @@ builder.Services.AddSwaggerGen(options =>
         Version = "v1"
     });
 
-    // JWT Bearer no Swagger
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -70,10 +69,7 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 
-    // evita estouro se houver conflito de endpoints
     options.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
-
-    // evita conflito de schemas quando existem classes com mesmo nome em namespaces diferentes
     options.CustomSchemaIds(t => t.FullName);
 });
 
@@ -101,25 +97,29 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// ===================== PIPELINE (ORDEM CERTA) =====================
+// ===================== SWAGGER =====================
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// 1) Routing
+// ===================== PIPELINE (ORDEM CERTA) =====================
 app.UseRouting();
 
-// 2) CORS (TEM QUE SER AQUI, antes do auth e do MapControllers)
+// ✅ CORS precisa estar aqui
 app.UseCors("AllowAll");
 
-// 3) Auth
+// ✅ “Blindagem” do preflight: responde OPTIONS para qualquer rota
+app.MapMethods("{*path}", new[] { "OPTIONS" }, () => Results.Ok())
+   .RequireCors("AllowAll");
+
 app.UseAuthentication();
 app.UseAuthorization();
 
-// 4) Controllers
-app.MapControllers().RequireCors("AllowAll");
+// Controllers
+app.MapControllers(); // não precisa RequireCors aqui, pois já tem UseCors()
 
 // ===================== HEALTH =====================
-app.MapGet("/healthz", () => Results.Ok("ok"));
+app.MapGet("/healthz", () => Results.Ok("ok"))
+   .RequireCors("AllowAll");
 
 app.MapGet("/health", async (AppDbContext db) =>
 {
@@ -132,7 +132,6 @@ app.MapGet("/health", async (AppDbContext db) =>
     {
         return Results.Problem("Erro ao conectar no banco: " + ex.Message);
     }
-});
+}).RequireCors("AllowAll");
 
 app.Run();
-
