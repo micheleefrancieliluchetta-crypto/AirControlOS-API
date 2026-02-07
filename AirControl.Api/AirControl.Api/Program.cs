@@ -23,6 +23,10 @@ builder.Services.AddCors(options =>
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
+
+    if (string.IsNullOrWhiteSpace(connStr))
+        throw new Exception("Connection string 'DefaultConnection' NÃO encontrada. Verifique ConnectionStrings__DefaultConnection no Render.");
+
     options.UseNpgsql(connStr);
 });
 
