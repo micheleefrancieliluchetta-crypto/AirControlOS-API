@@ -6,7 +6,6 @@ using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder(args);
 
 // ===================== CORS =====================
-// Libera somente o frontend do Vercel
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -14,8 +13,8 @@ builder.Services.AddCors(options =>
         policy
             .WithOrigins("https://sistemasmaxi.vercel.app")
             .AllowAnyHeader()
-            .AllowAnyMethod();
-        // Se você NÃO usa cookies, NÃO use AllowCredentials()
+            .AllowAnyMethod()
+            .AllowCredentials(); // OPCIONAL – pode tirar se não usa cookies
     });
 });
 
@@ -23,10 +22,6 @@ builder.Services.AddCors(options =>
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
-
-    if (string.IsNullOrWhiteSpace(connStr))
-        throw new Exception("Connection string 'DefaultConnection' NÃO encontrada. Verifique ConnectionStrings__DefaultConnection no Render.");
-
     options.UseNpgsql(connStr);
 });
 
@@ -105,25 +100,19 @@ using (var scope = app.Services.CreateScope())
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// ===================== PIPELINE (ORDEM CERTA) =====================
+// ===================== PIPELINE =====================
 app.UseRouting();
 
-// ✅ CORS precisa estar aqui
+// CORS — precisa vir AQUI
 app.UseCors("AllowAll");
-
-// ✅ “Blindagem” do preflight: responde OPTIONS para qualquer rota
-app.MapMethods("{*path}", new[] { "OPTIONS" }, () => Results.Ok())
-   .RequireCors("AllowAll");
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Controllers
-app.MapControllers(); // não precisa RequireCors aqui, pois já tem UseCors()
+app.MapControllers();
 
 // ===================== HEALTH =====================
-app.MapGet("/healthz", () => Results.Ok("ok"))
-   .RequireCors("AllowAll");
+app.MapGet("/healthz", () => Results.Ok("ok"));
 
 app.MapGet("/health", async (AppDbContext db) =>
 {
@@ -136,6 +125,6 @@ app.MapGet("/health", async (AppDbContext db) =>
     {
         return Results.Problem("Erro ao conectar no banco: " + ex.Message);
     }
-}).RequireCors("AllowAll");
+});
 
 app.Run();
