@@ -1,49 +1,43 @@
 using AirControl.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
-using System.Text.Json.Serialization;
+using System.Linq;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ===================== CORS =====================
+// =============== CORS ===============
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddPolicy("FrontendMaxi", policy =>
     {
         policy
-            .WithOrigins("https://sistemasmaxi.vercel.app")
+            .WithOrigins(
+                "https://sistemasmaxi.vercel.app",
+                "https://sistemasmaxi.vercel.app/"  // só por garantia
+            )
             .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials(); // OPCIONAL – pode tirar se não usa cookies
+            .AllowAnyMethod();
+            // Se em algum momento usar cookies/token em cookie:
+            // .AllowCredentials();
     });
 });
 
-// ===================== DB (PostgreSQL) =====================
+// =============== DB (PostgreSQL) ===============
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
     options.UseNpgsql(connStr);
 });
 
-// ===================== CONTROLLERS =====================
-builder.Services.AddControllers()
-    .AddJsonOptions(o =>
-    {
-        o.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-    });
-
+// =============== CONTROLLERS + SWAGGER ===============
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-
-// ===================== SWAGGER =====================
-builder.Services.AddSwaggerGen(options =>
+builder.Services.AddSwaggerGen(c =>
 {
-    options.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title = "Maxi API",
-        Version = "v1"
-    });
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "AirControlOS API", Version = "v1" });
 
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    // --- Segurança Bearer no Swagger ---
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
         Type = SecuritySchemeType.Http,
@@ -53,7 +47,7 @@ builder.Services.AddSwaggerGen(options =>
         Description = "Digite: Bearer {seu_token}"
     });
 
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
             new OpenApiSecurityScheme
@@ -68,19 +62,19 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 
-    options.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
-    options.CustomSchemaIds(t => t.FullName);
+    // --- Corrige conflito de rotas no Swagger (ambiguous HTTP method) ---
+    c.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
 });
 
 var app = builder.Build();
 
-// ===================== ERROS DE DEV =====================
+// =============== ERROS DE DEV ===============
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
 }
 
-// ===================== MIGRATIONS AUTOMÁTICAS =====================
+// =============== MIGRATIONS AUTOMÁTICAS ===============
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -96,24 +90,22 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// ===================== SWAGGER =====================
+// =============== PIPELINE HTTP ===============
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// ===================== PIPELINE =====================
-app.UseRouting();
+app.UseHttpsRedirection();
 
-// CORS — precisa vir AQUI
-app.UseCors("AllowAll");
+// >>> ORDEM IMPORTANTE <<<
+app.UseRouting();                 // 1️⃣ resolve a rota
+app.UseCors("FrontendMaxi");      // 2️⃣ aplica CORS nessa rota
+app.UseAuthentication();          // 3️⃣ auth
+app.UseAuthorization();           // 4️⃣ autorização
 
-app.UseAuthentication();
-app.UseAuthorization();
+app.MapControllers();             // 5️⃣ controllers
 
-app.MapControllers();
-
-// ===================== HEALTH =====================
+// Endpoints de saúde (opcional)
 app.MapGet("/healthz", () => Results.Ok("ok"));
-
 app.MapGet("/health", async (AppDbContext db) =>
 {
     try
